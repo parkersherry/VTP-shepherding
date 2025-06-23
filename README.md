@@ -7,3 +7,9 @@ Current Status: All code used in this project is available in the repository. Us
 Credits: This is a general multi-agent simulator written by Mikey Baker and Parker Sherry, with base code from Jack Tisdell.
 
 Code is written in MATLAB.
+
+# Contact Us
+
+Parker Sherry: parker.sherry@mail.mcgill.ca
+
+Mikey Baker: mikey.baker@mail.mcgill.ca

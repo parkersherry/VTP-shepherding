@@ -1,6 +1,6 @@
 %% Parameters
 clear all;
-N = 100;
+N = 50;
 Ndogs = 1;
 L = 3.3;
 nu = ones(N,1);
@@ -24,8 +24,8 @@ erase='';
 
 % Display
 display=true;   % if true, will plot agents when code is run
-fixframe = false;
-frameinrad = 25;
+fixframe = true;
+frameinrad = 30;
 
 % no idea
 fdim = 1;
@@ -47,8 +47,8 @@ FourierCoeff = rand([10 10 3]);
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = 4*ic_rad*(2*rand(Ndogs,2) - 1);
-X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1);
+X(1:Ndogs,:) = 4*ic_rad*(2*rand(Ndogs,2) - 1)-40;
+X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-10;
 
 Nsheep = N-Ndogs;
 rainbowPalette = hsv; % better for colourblind to use cool
@@ -88,8 +88,8 @@ tar = Target();
 
 
 
-%dogTar = Target([20 12.5]);
-dogTar = Target();
+dogTar = Target([20 12.5]);
+%dogTar = Target();
 
 %% Preallocation of some intermediate variables
 
@@ -121,7 +121,7 @@ LastSeen = zeros(N,1);
 equil = 0;
 TimeStratifiedX = 0;
 
-scalarF = "zero";
+scalarF = "fence";
 
 %% Time for loop
 for t = 1:tmax
@@ -147,7 +147,6 @@ for t = 1:tmax
     a = alignTo(X,U,nbhd,'expReciprocal', sheepThetaVision, Ndogs,vMaxSheep);
 
     %---------------------------------%
-    prefVel = zeros(N-Ndogs,2);
     prefVel = gradPreferenceField(X,FourierCoeff,scalarF);
     
     %Memory Dognamics

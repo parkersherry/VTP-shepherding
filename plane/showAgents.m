@@ -41,9 +41,9 @@ if Ndogs>0
     scatter(equilibrium(1), equilibrium(2), 'green')
 end
 Xsheep = X(Ndogs+1:end,:);
-shp = alphaShape(Xsheep,sqrt(N));
-[~,P] = boundaryFacets(shp);
-plot(shp)
+% shp = alphaShape(Xsheep,sqrt(N));
+% [~,P] = boundaryFacets(shp);
+% plot(shp)
 %plot(P(:,1),P(:,2))
 plot(Xsheep(convHullIndices,1),Xsheep(convHullIndices,2),'Color',purple)
 

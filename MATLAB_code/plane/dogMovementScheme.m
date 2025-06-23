@@ -54,11 +54,10 @@ Xsheep = X(Ndogs+1:end,:);
 recallDelay = 240;
 
 [nbhd, nearest, ~] = neighborhoods(DT,2);
-DT_sheep = delaunayTriangulation(X(Ndogs+1:N,:));
-[C, ~] = convexHull(DT_sheep);
 
 shp = alphaShape(Xsheep,alpha);
 [~,P] = boundaryFacets(shp);
+P(end+1,:) = P(1,:);
 concHullTar = Target((P));
 
 CMs = zeros(Ndogs,2);
@@ -107,7 +106,7 @@ for i = 1:Ndogs
     %if you can see the residual image of the sheep then obvi there is no
     %sheep there and you should forget it
     ToDel = zeros(size(SheepNbhdPast));
-    inside = inhull(TotalX(SheepNbhdPast,:),Xsheep(C,:));
+    inside = inhull(TotalX(SheepNbhdPast,:),P);
     for j=1:numel(SheepNbhdPast)
         if (inside(j)==1)
             continue
@@ -115,7 +114,7 @@ for i = 1:Ndogs
         Xcoords = [X(i,1) TotalX(SheepNbhdPast(j),1)];
         %disp(size(Xcoords))
         Ycoords = [X(i,2) TotalX(SheepNbhdPast(j),2)];
-        [xIntersect,~] = polyxpoly(Xcoords,Ycoords,Xsheep(C,1),Xsheep(C,2));
+        [xIntersect,~] = polyxpoly(Xcoords,Ycoords,P(:,1),P(:,2));
         if (isempty(xIntersect))
             ToDel(j) = 1;
         end
@@ -250,4 +249,4 @@ stalkDir = CMs(indices,:)-X(indices,:);
 stalkDir = stalkDir./vecnorm(stalkDir,2,2);
 U(indices,:) = 0.02.*(stalkDir);
 disp(find(isnan(U)))
-output = {U, goalLocationArr,C,LastSeen,TotalX,exponentialDecay,stopSimul};
+output = {U, goalLocationArr,P,LastSeen,TotalX,exponentialDecay,stopSimul};

@@ -1,4 +1,4 @@
-function output = showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equilibrium,convHullIndices,timeStratifiedX,plotTSX,expDecay,colours,pallette,scalarField)
+function output = showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equilibrium,alphaHull,timeStratifiedX,plotTSX,expDecay,colours,pallette,scalarField)
 
 
 purple = [128, 0 , 128] / 255;
@@ -40,12 +40,11 @@ scatter(X(1:Ndogs,1), X(1:Ndogs,2), 'filled','red')
 if Ndogs>0
     scatter(equilibrium(1), equilibrium(2), 'green')
 end
-Xsheep = X(Ndogs+1:end,:);
 % shp = alphaShape(Xsheep,sqrt(N));
 % [~,P] = boundaryFacets(shp);
 % plot(shp)
 %plot(P(:,1),P(:,2))
-plot(Xsheep(convHullIndices,1),Xsheep(convHullIndices,2),'Color',purple)
+plot(alphaHull(:,1),alphaHull(:,2),'Color',purple)
 
 %---------------------------%
 qs = 3;

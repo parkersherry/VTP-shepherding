@@ -2,7 +2,7 @@
 clear all;
 warning('off','all')
 N = 50;
-alpha = sqrt(N);
+alpha = Inf;%sqrt(N);
 Ndogs = 1;
 L = 3.3;
 nu = ones(N,1);
@@ -90,8 +90,8 @@ tar = Target();
 
 
 
-dogTar = Target([20 12.5]);
-%dogTar = Target();
+%dogTar = Target([20 20]);
+dogTar = Target();
 
 %% Preallocation of some intermediate variables
 
@@ -157,7 +157,7 @@ for t = 1:tmax
         DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha);
         U1 = DMS{1};
         equil = DMS{2};
-        convHullIndices = DMS{3};
+        alphaHull = DMS{3};
         LastSeen = DMS{4};
         TimeStratifiedX = DMS{5};
         plotTimeStratifiedX = true;
@@ -166,7 +166,9 @@ for t = 1:tmax
             break
         end
     else
-        convHullIndices = convexHull(DT);
+        shp = alphaShape(Xsheep,alpha);
+        [~,alphaHull] = boundaryFacets(shp);
+        alphaHull(end+1,:) = alphaHull(1,:);
         plotTimeStratifiedX = false;
     end
     %---------------------------------%
@@ -181,7 +183,7 @@ for t = 1:tmax
     %add up all contributions to the velocity; divide by 5 for sheep:dog
     %speed ratios
 
-    U1(Ndogs+1:N,:) = (r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
+    U1(Ndogs+1:N,:) = U1(Ndogs+1:N,:)+(r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
 
     %---------------------------------%
     % calculate rho based on model choice
@@ -194,7 +196,7 @@ for t = 1:tmax
 
     % plot
     if display==true
-        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,convHullIndices,TimeStratifiedX,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF);
+        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,alphaHull,TimeStratifiedX,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF);
     end
     %---------------------------------%
 

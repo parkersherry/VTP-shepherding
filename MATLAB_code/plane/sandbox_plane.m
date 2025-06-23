@@ -1,6 +1,8 @@
 %% Parameters
 clear all;
+warning('off','all')
 N = 50;
+alpha = sqrt(N);
 Ndogs = 1;
 L = 3.3;
 nu = ones(N,1);
@@ -24,7 +26,7 @@ erase='';
 
 % Display
 display=true;   % if true, will plot agents when code is run
-fixframe = true;
+fixframe = false;
 frameinrad = 30;
 
 % no idea
@@ -121,7 +123,7 @@ LastSeen = zeros(N,1);
 equil = 0;
 TimeStratifiedX = 0;
 
-scalarF = "fence";
+scalarF = "zero";
 
 %% Time for loop
 for t = 1:tmax
@@ -152,15 +154,15 @@ for t = 1:tmax
     %Memory Dognamics
     if Ndogs>0
 
-        dSV = dogSweepVoronoiMem2(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:));
-        U1 = dSV{1};
-        equil = dSV{2};
-        convHullIndices = dSV{3};
-        LastSeen = dSV{4};
-        TimeStratifiedX = dSV{5};
+        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha);
+        U1 = DMS{1};
+        equil = DMS{2};
+        convHullIndices = DMS{3};
+        LastSeen = DMS{4};
+        TimeStratifiedX = DMS{5};
         plotTimeStratifiedX = true;
-        expDecay = dSV{6};
-        if (dSV{7})
+        expDecay = DMS{6};
+        if (DMS{7})
             break
         end
     else
@@ -170,24 +172,11 @@ for t = 1:tmax
     %---------------------------------%
     %get the repulsion vector and value of sigma curve for each agent
 
-    C = dogRepulsion(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd);
+    C = sheepMovementScheme(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd,tar,HomingDistance);
     r = C{1};
-    s = C{2};
+    h = C{2};
     nu = C{3}./2;
 
-    %---------------------------------%
-    %Get homing vector
-    h0=homeToTarget(tar,X);
-
-    %Turn off homing for agents too far away to feel the attraction
-    hNorm = vecnorm(h0,2,2);
-    indicesToZero = find(hNorm > HomingDistance);
-    h0(indicesToZero,:) = 0;
-
-    %normalize the homing vector with sigma
-    h = (1-abs(s)) .* h0./vecnorm(h0,2,2);   % rescale to length 1-s
-    h(isnan(h)) = 0;                    % protect 0 entries
-    %---------------------------------%
 
     %add up all contributions to the velocity; divide by 5 for sheep:dog
     %speed ratios

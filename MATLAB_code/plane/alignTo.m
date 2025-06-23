@@ -56,4 +56,5 @@ if size(a,1) ~= size(b,1)
     msg = 'second input must have same length as first';
     throwAsCaller(MException(eid,msg));
 end
+disp("yellow")
 end

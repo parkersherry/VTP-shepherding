@@ -59,7 +59,9 @@ switch scalarField
         grad(indices,:) = (400/a^2).*[exp((-1/a).*(X(indices,1)-20).^2) exp((-1/a).*(X(indices,2)-20).^2)];
     case 'infiniteFence'
         a = 0.44;
-        grad(:,1) = (-400/a^2).*exp((-1/a).*(X(:,1)-20).^2);
+        inside = (X(:,1)<20).*(X(:,2)<20);
+        indices = find(inside);
+        grad(indices,:) = (-400/a^2).*[exp((-1/a).*(X(indices,1)-20).^2) exp((-1/a).*(X(indices,2)-20).^2)];
     case 'zero'
         return;
 end

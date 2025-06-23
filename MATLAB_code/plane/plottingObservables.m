@@ -1,4 +1,4 @@
-filename = '/Users/mikey/Summer 2025/plane/SheepObservedPolarizationAndDrifts.mat';
+filename = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/plane/SheepObservedPolarizationAndDrifts.mat';
 load(filename);
 
 clear("fig1")
@@ -81,7 +81,7 @@ xlabel('Number of Sheep')
 ylabel('Mean Polarization') 
 
 
-filename1 = '/Users/mikey/Summer 2025/plane/SheepObservedPolarizationAndDrifts1.mat';
+filename1 = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/plane/SheepObservedPolarizationAndDrifts1.mat';
 load(filename1);
 
 N = [50 75 80 105 110 135 140 165 170 195 200 225 230 255 260 285 290 315 320 345];

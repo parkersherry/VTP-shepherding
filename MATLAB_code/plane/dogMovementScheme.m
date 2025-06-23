@@ -27,7 +27,7 @@
 %                   the ith dog agent wants to move to. positions(i,:)
 %                   is defined such that the ith dog agent and its target
 %                   sheep agent are collinear with the local CM.
-function output = dogMovementScheme(X_T, U,DT, Ndogs, L, tar ,t ,LastSeen,scalarField,prefVel,alpha)
+function output = dogMovementScheme(X_T, U,DT, Ndogs, L, tar ,t ,LastSeen,scalarField,prefVel,alpha,memDuration)
 
 arguments
     X_T
@@ -41,6 +41,7 @@ arguments
     scalarField
     prefVel
     alpha
+    memDuration = 240
 end
 % toggles whether to prioritize being collinear with
 % local CM and dog target
@@ -51,7 +52,7 @@ X = X_T(:,:,t);
 N = numel(X)/2;
 Xsheep = X(Ndogs+1:end,:);
 
-recallDelay = 240;
+recallDelay = memDuration;
 
 [nbhd, nearest, ~] = neighborhoods(DT,2);
 
@@ -145,7 +146,7 @@ for i = 1:Ndogs
 
 
     exponentialDecay = ExpAmplitude.*exp(decayRate.*(LastSeen-t)./recallDelay) + ExpShift;
-    CM = mean(TotalX(SheepNbhd,:).*exponentialDecay(SheepNbhd));
+    CM = sum(TotalX(SheepNbhd,:).*exponentialDecay(SheepNbhd),1)./(sum(exponentialDecay(SheepNbhd)));
 
     equilibrium = findDogEquil(CM,L , tar,numel(SheepNbhd));
 

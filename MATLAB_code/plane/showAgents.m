@@ -81,6 +81,7 @@ axis(frame);
 
 %---------------------------%
 %preference field
+lim = axis;
 hold on
 if ~strcmp(scalarField,'zero')
     lim = axis;
@@ -91,10 +92,18 @@ if ~strcmp(scalarField,'zero')
     if (strcmp(scalarField,'fence'))
         yFence = linspace(lim(1),15,100);
         scatter(yFence,20.*ones(size(yFence)),20,'filled','s','black')
-        xFence = linspace(lim(1),15,100);
+        xFence = linspace(lim(3),15,100);
         scatter(20.*ones(size(xFence)),xFence,20,'filled','s','black')
 
         %contour(X,Y,Z,6,'black','LineWidth',0.2)
+    elseif (strcmp(scalarField,'fenceNoGap'))
+        yFence = linspace(lim(1),20,100);
+        scatter(yFence,20.*ones(size(yFence)),20,'filled','s','black')
+        xFence = linspace(lim(3),20,100);
+        scatter(20.*ones(size(xFence)),xFence,20,'filled','s','black')
+    elseif (strcmp(scalarField,'infiniteFence'))
+        xFence = linspace(lim(3),lim(4),100);
+        scatter(20.*ones(size(xFence)),xFence,20,'filled','s','black')
     else
         contour(X,Y,Z,levels,'black','LineWidth',1.5)
 

@@ -1,0 +1,27 @@
+
+N = ceil(linspace(50,350,25));
+memory = ceil(linspace(1,240,25));
+memory(2:end-1) = memory(2:end-1)-1;
+
+for memIndex = 1:numel(memory)
+    for NIndex = 1:numel(N)
+        posSeed = randi(100000);
+        angSeed = randi(100000);
+        fnameFenceHole = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/OvernightRunsJune23/Fence/Fence_N_'+string(N(NIndex))+'_mem_'+string(nu(memIndex)) + '_run_' + string(seedIndex) + '.mat';
+        fnameHalfBubble = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/OvernightRunsJune23/HalfBubble/HalfBubble_N_'+string(N(NIndex))+'_mem_'+string(nu(memIndex)) + '_run_' + string(seedIndex) + '.mat';
+        fnameQuarterBubble = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/OvernightRunsJune23/QuarterBubble/QuarterBubble_N_'+string(N(NIndex))+'_mem_'+string(nu(memIndex)) + '_run_' + string(seedIndex) + '.mat';
+        (filename,N,L,alpha,tmax,dogTar,memDuration,position_seed,angle_seed,Ndogs)
+        fenceTar = Target([20 20]);
+        quarterBubbleTar
+        halfBubbleTar = Target([0 0]);
+        
+
+        serialSandbox(fnameFenceHole,N(NIndex),3.3,Inf,1000,posSeed,angSeed,0)
+        serialSandbox(fnameHalfBubble,N(NIndex),3.3,Inf,1000,posSeed,angSeed,0)
+        serialSandbox(fnameQuarterBubble,N(NIndex),3.3,Inf,1000,posSeed,angSeed,0)
+    end
+
+
+
+end
+

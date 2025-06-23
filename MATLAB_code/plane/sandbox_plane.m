@@ -1,7 +1,7 @@
 %% Parameters
 clear all;
 warning('off','all')
-N = 50;
+N = 100;
 alpha = Inf;%sqrt(N);
 Ndogs = 1;
 L = 3.3;
@@ -49,8 +49,8 @@ FourierCoeff = rand([10 10 3]);
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = 4*ic_rad*(2*rand(Ndogs,2) - 1)-40;
-X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-10;
+X(1:Ndogs,:) = ic_rad*(2*rand(Ndogs,2) - 1)-2*sqrt(2*N)*L;
+X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-sqrt(2*N)*L;
 
 Nsheep = N-Ndogs;
 rainbowPalette = hsv; % better for colourblind to use cool
@@ -90,8 +90,8 @@ tar = Target();
 
 
 
-%dogTar = Target([20 20]);
-dogTar = Target();
+dogTar = Target([20 0]);
+%dogTar = Target();
 
 %% Preallocation of some intermediate variables
 
@@ -123,7 +123,7 @@ LastSeen = zeros(N,1);
 equil = 0;
 TimeStratifiedX = 0;
 
-scalarF = "zero";
+scalarF = "fence";
 
 %% Time for loop
 for t = 1:tmax

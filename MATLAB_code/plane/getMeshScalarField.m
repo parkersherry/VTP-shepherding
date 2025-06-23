@@ -31,4 +31,15 @@ switch scalarField
         Z(Y>21) = 0;
         inside = inpolygon(X(:),Y(:),[15;25;25;15],[15;15;20;20]);
         Z(find(inside==1)) = 0;
+    case 'fenceNoGap'
+        Z = zeros(size(X));
+        Z(X>20) = 6;
+        Z(Y>20) = 6;
+
+        Z(X>21) = 0;
+        Z(Y>21) = 0;
+    case 'infiniteFence'
+        Z = zeros(size(X));
+        Z(X>20) = 6;
+        Z(X>21) = 0;
 end

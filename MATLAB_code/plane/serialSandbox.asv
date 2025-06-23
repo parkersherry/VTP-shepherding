@@ -1,33 +1,26 @@
+function serialSandbox(filename,N,L,nu,alpha,tmax,dogTar,position_seed,angle_seed,Ndogs)
+arguments
+    filename (1,:) char
+    N (1,1) double {mustBeInteger,mustBePositive}
+    L (1,1) double {mustBeNonnegative}
+    nu 
+    alpha
+    tmax (1,1) double {mustBeInteger,mustBePositive}
+    dogTar
+    position_seed (1,1) double {mustBeInteger} = 0
+    angle_seed (1,1) double {mustBeInteger} = 0
+    Ndogs (1,1) double {mustBeInteger} = 0
+end
+
 %% Parameters
-clear all;
-warning('off','all')
-N = 50;
-alpha = sqrt(N);
-Ndogs = 1;
-L = 3.3;
-nu = ones(N,1);
-tmax = 1000; % set to 50 for shorter runtime
 pressures = zeros(tmax,1);
 CMDrift = zeros(tmax,1);
 
 vMaxSheep = 1/2;
 HomingDistance = 10*L;
-%---------------------------
-% syms x y
-% scalarField(x,y) = 0;%5*exp((-x^2-y^2)/400);
-% %scalarField(x,y) = x+y^2;
-% v = [x,y];
-% vectorField = gradient(scalarField,v);
-% vecFunc = @(x,y) vectorField(x,y);
-%---------------------------
 
-filename='data.mat';
 erase='';
 
-% Display
-display=true;   % if true, will plot agents when code is run
-fixframe = false;
-frameinrad = 30;
 
 % no idea
 fdim = 1;
@@ -43,24 +36,19 @@ end
 ic_rad=sqrt(N)*L;
 
 % sets seed
-rng(4);
-FourierCoeff = rand([10 10 3]);
+rng(position_seed);
+FourierCoeff = zeros([10 10 3]);
 
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = 4*ic_rad*(2*rand(Ndogs,2) - 1)-40;
-X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-10;
+X(1:Ndogs,:) = 4*ic_rad*(2*rand(Ndogs,2) - 1)-4*sqrt(N)*L;
+X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-sqrt(N)*L;
 
 Nsheep = N-Ndogs;
-rainbowPalette = hsv; % better for colourblind to use cool
-colours = (mod(1:Nsheep, Nsheep)+1)';
-angles = atan2(X(Ndogs+1:N,2),X(Ndogs+1:N,1));
-[~,permutation] = sort(angles);
-X(Ndogs+1:N,:) = circshift(X(permutation+Ndogs,:),(Nsheep-mod(Nsheep,2))/2);
 
 % sets seed
-rng(500);
+rng(angle_seed);
 
 sheepThetaVision = ((pi/180)*(306-191)).*rand(N,1) + (pi/180)*191;
 
@@ -71,33 +59,13 @@ U(1:Ndogs,:) = 0;
 X_0 = X;
 %% Initialize targets
 
-% assigns subpopulations 1 and 2
-% a N x 1 vector of all ones
-ids = ones(N,1);
-ids(1:N/2) = 2;
-
-
-
-% this makes 3 targets:
-% tar_rad = 4;
-% tar_ang = 2*pi/3;
-% tar = Target({tar_rad*[1 0],tar_rad*[cos(tar_ang) sin(tar_ang)],tar_rad*[cos(2*tar_ang) sin(2*tar_ang)]});
 tar = Target();
 
-% Our targets
-%tar = Target([0 0]);
-% tar = Target({[0 0],[20 20]});
-
-
-
-dogTar = Target([20 12.5]);
-%dogTar = Target();
 
 %% Preallocation of some intermediate variables
 
 % initialize all of these as zero vectors
-[r,a,h0,h,s,l,rho] = deal(zeros(N,2));
-prevSheepTars = zeros(Ndogs,1);
+%[r,a,h0,h,s,l,rho] = deal(zeros(N,2));
 
 % initialize as N x 2 of zeroes
 U1 = zeros(N,2);
@@ -123,7 +91,7 @@ LastSeen = zeros(N,1);
 equil = 0;
 TimeStratifiedX = 0;
 
-scalarF = "zero";
+scalarF = "fenceNoGap";
 
 %% Time for loop
 for t = 1:tmax
@@ -157,7 +125,7 @@ for t = 1:tmax
         DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha);
         U1 = DMS{1};
         equil = DMS{2};
-        convHullIndices = DMS{3};
+        alphaHull = DMS{3};
         LastSeen = DMS{4};
         TimeStratifiedX = DMS{5};
         plotTimeStratifiedX = true;
@@ -166,24 +134,24 @@ for t = 1:tmax
             break
         end
     else
-        convHullIndices = convexHull(DT);
+        shp = alphaShape(Xsheep,alpha);
+        [~,alphaHull] = boundaryFacets(shp);
+        alphaHull(end+1,:) = alphaHull(1,:);
         plotTimeStratifiedX = false;
     end
     %---------------------------------%
     %get the repulsion vector and value of sigma curve for each agent
 
-    C = dogRepulsion(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd);
+    C = sheepMovementScheme(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd,tar,HomingDistance);
     r = C{1};
-    h = C{2}
+    h = C{2};
     nu = C{3}./2;
-    a =
-
 
 
     %add up all contributions to the velocity; divide by 5 for sheep:dog
     %speed ratios
 
-    U1(Ndogs+1:N,:) = (r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
+    U1(Ndogs+1:N,:) = U1(Ndogs+1:N,:)+(r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
 
     %---------------------------------%
     % calculate rho based on model choice
@@ -196,7 +164,7 @@ for t = 1:tmax
 
     % plot
     if display==true
-        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,convHullIndices,TimeStratifiedX,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF);
+        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,alphaHull,TimeStratifiedX,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF);
     end
     %---------------------------------%
 

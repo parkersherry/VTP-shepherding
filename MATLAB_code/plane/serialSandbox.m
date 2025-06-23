@@ -1,94 +1,169 @@
-function serialSandbox(filename,N,L,nu,tmax,position_seed,angle_seed,Ndogs)
+function serialSandbox(filename,N,L,alpha,tmax,dogTar,memDuration,position_seed,angle_seed,Ndogs,boundary)
 arguments
     filename (1,:) char
     N (1,1) double {mustBeInteger,mustBePositive}
     L (1,1) double {mustBeNonnegative}
-    nu (1,1) double {mustBePositive}
+    alpha
     tmax (1,1) double {mustBeInteger,mustBePositive}
+    dogTar
+    memDuration
     position_seed (1,1) double {mustBeInteger} = 0
     angle_seed (1,1) double {mustBeInteger} = 0
     Ndogs (1,1) double {mustBeInteger} = 0
+    boundary = 'zero'
 end
 
 %% Parameters
+pressures = zeros(tmax,1);
+CMDrift = zeros(tmax,1);
+
+vMaxSheep = 1/2;
+HomingDistance = 10*L;
+
 erase='';
 
+
+% no idea
 fdim = 1;
 M0 = L;
 if fdim==2
     M0 = pi*L^2/2;
 end
 
+
+
 %% Initial conditions
-ic_rad=.5*sqrt(N*pi/4/.91);
+nu = ones(N,1);
+
+ic_rad=sqrt(N)*L;
+
+% sets seed
 rng(position_seed);
-X = ic_rad*(2*rand(N,2) - 1);
+FourierCoeff = zeros([10 10 3]);
+
+% assign to X the value of ic_rad
+X=zeros(N,2);
+% multiplied by a random number drawn from the interval [-1,1]
+X(1:Ndogs,:) = ic_rad*(2*rand(Ndogs,2) - 1)-2*sqrt(2*N)*L;
+X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-sqrt(2*N)*L;
+
+Nsheep = N-Ndogs;
+
+% sets seed
 rng(angle_seed);
 
 sheepThetaVision = ((pi/180)*(306-191)).*rand(N,1) + (pi/180)*191;
-ang = 2*pi*rand(N,1);
-U = [cos(ang) sin(ang)];
 
+ang = 2*pi*rand(N,1); % N x 1
+U = [cos(ang) sin(ang)]; % N x 2, random starting orientations
+U(1:Ndogs,:) = 0;
+
+X_0 = X;
 %% Initialize targets
-tar = Target([0 0]);
-dogTar = Target([20 20]);
+
+tar = Target();
+
+
+%% Preallocation of some intermediate variables
+
+
+% initialize as N x 2 of zeroes
+U1 = zeros(N,2);
+
 
 %% Preallocation of time series variables
 U_t = zeros(N,2,tmax);
 DT_t = cell(tmax,1);
-U1 = zeros(N,2);
+X_T = zeros(N,2,tmax);
+expDecay = zeros(N,2);
+%enforce sheep speed limit
+g = ones(N,1);
+sizeOfVel = vecnorm(U,2,2);
+tooLarge = find(sizeOfVel>vMaxSheep);
+g(tooLarge) = vMaxSheep./sizeOfVel(tooLarge);
+U(Ndogs+1:end,:) = g(Ndogs+1:end).*U(Ndogs+1:end,:);
+LastSeen = zeros(N,1);
+equil = 0;
+TimeStratifiedX = 0;
 
-prevSheepTars = zeros(Ndogs,1);
+scalarF = boundary;
 
+%% Time for loop
 for t = 1:tmax
-    %% Compute step
-    % make graph based on current positions of agents at time t
+    
+    %---------------------------------%
+ 
     DT = delaunayTriangulation(X);
-    %[ConvexHull,hullArea] = convexHull(DT);
-    % save in guy
+    [nbhd, ~, ~] = neighborhoods(DT);
+
+    %---------------------------------%
+    %keeping track of info at each time step
     DT_t{t} = DT;
-
-    % save current displacement vectors in guy at time t
     U_t(:,:,t) = U;
+    X_T(:,:,t) = X;
+    CMDrift(t) = vecnorm(mean(X(Ndogs+1:N,:)-[20 20]),2,2);
+    pressures(t) = voronoiPressure(DT);
 
-    [nbhd, nearest, d] = neighborhoods(DT);
+    %---------------------------------%
 
+    % get alignment vector scaled by current velocity
+    a = alignTo(X,U,nbhd,'expReciprocal', sheepThetaVision, Ndogs,vMaxSheep);
 
+    %---------------------------------%
+    prefVel = gradPreferenceField(X,FourierCoeff,scalarF);
+    
+    %Memory Dognamics
     if Ndogs>0
-        dSV = dogSweepVoronoi(X,U, DT, Ndogs, L, dogTar, nbhd,prevSheepTars);
-        U1 = dSV{1};
-        prevSheepTars = dSV{2};
-        equil = dSV{3};
+
+        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha,memDuration);
+        U1 = DMS{1};
+        LastSeen = DMS{4};
+        if (DMS{7})
+            break
+        end
     end
+    %---------------------------------%
+    %get the repulsion vector and value of sigma curve for each agent
 
-    C = dogRepulsion(X, U1, L, nbhd, nearest, d, Ndogs,'expReciprocal','dogExpReciprocal');
+    C = sheepMovementScheme(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd,tar,HomingDistance);
     r = C{1};
-    s = C{2};
+    h = C{2};
+    nu = C{3}./2;
 
-    % alignment
-    a = alignTo(X,U,nbhd,'expReciprocal', sheepThetaVision, Ndogs);
 
-    % homing
-    h0=homeToTarget(tar,X);
-    h = (1-abs(s)) .* h0./vecnorm(h0,2,2);   % rescale to length 1-s
-    h(isnan(h)) = 0;                    % protect 0 entries
+    %add up all contributions to the velocity; divide by 5 for sheep:dog
+    %speed ratios
 
-    % direction
-    U1(Ndogs+1:N,:) = (r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu.*a(Ndogs+1:N,:))./(5*(1 + nu));
+    U1(Ndogs+1:N,:) = U1(Ndogs+1:N,:)+(r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
 
-    % speed
+    %---------------------------------%
+    % calculate rho based on model choice
     [~,l] = voronoiProjectToBoundary(DT,U1);
     M = l;
     if fdim==2
         M = voronoiForwardArea(DT,U1);
     end
+    %---------------------------------%
 
-    %% Update
-    U = U1;
-    U(Ndogs+1:N,:) = tanh(M(Ndogs+1:N,:)/M0).*U(Ndogs+1:N,:);
+
+    % Time step
+    U1(Ndogs+1:N,:) = tanh(M(Ndogs+1:N,:)/M0).*U1(Ndogs+1:N,:);
+
+    %---------------------------------%
+
+
+    %enforce cosmic sheep speed limit
+    g = ones(N,1);
+    sizeOfVel = vecnorm(U1,2,2);
+    tooLarge = find(sizeOfVel>vMaxSheep);
+    g(tooLarge) = vMaxSheep./sizeOfVel(tooLarge);
+    U(Ndogs+1:end,:) = g(Ndogs+1:end).*U1(Ndogs+1:end,:);
+    %---------------------------------%
+
     X = X + U;
 
-    %% display progress
+
+    % display progress
     barwidth = 60;
     frac = floor(t/tmax * barwidth);
     fracpct = t/tmax*100;
@@ -100,6 +175,6 @@ for t = 1:tmax
 
 
 end
+%
 
-save(filename,'N','L','nu','Ndogs','position_seed','angle_seed','DT_t','U_t');
-end
+save(filename,'N','L','nu','alpha','tmax','dogTar','position_seed','angle_seed','Ndogs','DT_t','U_t');

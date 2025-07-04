@@ -1,7 +1,7 @@
 %% Parameters
-clear all;
+% clear all;
 warning('off','all')
-N = 100;
+N = 51;
 alpha = Inf;%sqrt(N);
 Ndogs = 1;
 L = 3.3;
@@ -27,8 +27,8 @@ erase='';
 % Display
 display=true;   % if true, will plot agents when code is run
 fixframe = false;
-frameinrad = 30;
-
+frameinrad = 50;
+Xmem = zeros(N,2);
 % no idea
 fdim = 1;
 M0 = L;
@@ -39,28 +39,29 @@ end
 
 
 %% Initial conditions
+Nsheep = N-Ndogs;
 
-ic_rad=sqrt(N)*L;
+ic_radSheep=sqrt(Nsheep)*L;
+ic_radDog=sqrt(Ndogs)*L;
 
 % sets seed
-rng(4);
-FourierCoeff = rand([10 10 3]);
+%rng(31198);
+FourierCoeff = zeros([10 10 3]);
 
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = ic_rad*(2*rand(Ndogs,2) - 1)-2*sqrt(2*N)*L;
-X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-sqrt(2*N)*L;
+X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1)-2*sqrt(Nsheep)*L - sqrt(2*Ndogs)*L;
+X(Ndogs+1:N,:) = ic_radSheep*(2*rand(Nsheep,2) - 1)-sqrt(Nsheep)*L;
 
-Nsheep = N-Ndogs;
 rainbowPalette = hsv; % better for colourblind to use cool
 colours = (mod(1:Nsheep, Nsheep)+1)';
 angles = atan2(X(Ndogs+1:N,2),X(Ndogs+1:N,1));
 [~,permutation] = sort(angles);
-X(Ndogs+1:N,:) = circshift(X(permutation+Ndogs,:),(Nsheep-mod(Nsheep,2))/2);
+X(Ndogs+1:N,:) = circshift(X(permutation+Ndogs,:),Nsheep);
 
 % sets seed
-rng(500);
+%rng(75166);
 
 sheepThetaVision = ((pi/180)*(306-191)).*rand(N,1) + (pi/180)*191;
 
@@ -90,7 +91,7 @@ tar = Target();
 
 
 
-dogTar = Target([20 0]);
+dogTar = Target([20 20]);
 %dogTar = Target();
 
 %% Preallocation of some intermediate variables
@@ -122,14 +123,14 @@ U(Ndogs+1:end,:) = g(Ndogs+1:end).*U(Ndogs+1:end,:);
 LastSeen = zeros(N,1);
 equil = 0;
 TimeStratifiedX = 0;
-
-scalarF = "fence";
-
+muMixing = zeros(tmax,1);
+scalarF = "zero";
+DistMatrixCell = cell(1,tmax);
 %% Time for loop
 for t = 1:tmax
-    
+
     %---------------------------------%
- 
+
     DT = delaunayTriangulation(X);
     [ConvexHull,hullArea] = convexHull(DT);
     [nbhd, nearest, d] = neighborhoods(DT);
@@ -142,7 +143,7 @@ for t = 1:tmax
     Polarization_t(t) = polarization(U,Ndogs);
     CMDrift(t) = vecnorm(mean(X(Ndogs+1:N,:)-[20 20]),2,2);
     pressures(t) = voronoiPressure(DT);
-
+    DistMatrixCell{t} = distanceMixMetric(N,Ndogs,X,X);
     %---------------------------------%
 
     % get alignment vector scaled by current velocity
@@ -150,11 +151,11 @@ for t = 1:tmax
 
     %---------------------------------%
     prefVel = gradPreferenceField(X,FourierCoeff,scalarF);
-    
+
     %Memory Dognamics
     if Ndogs>0
 
-        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha);
+        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha,15);
         U1 = DMS{1};
         equil = DMS{2};
         alphaHull = DMS{3};
@@ -166,9 +167,11 @@ for t = 1:tmax
             break
         end
     else
-        shp = alphaShape(Xsheep,alpha);
+        shp = alphaShape(X,alpha);
         [~,alphaHull] = boundaryFacets(shp);
-        alphaHull(end+1,:) = alphaHull(1,:);
+        if (~isempty(alphaHull))
+            alphaHull(end+1,:) = alphaHull(1,:);
+        end
         plotTimeStratifiedX = false;
     end
     %---------------------------------%
@@ -183,8 +186,8 @@ for t = 1:tmax
     %add up all contributions to the velocity; divide by 5 for sheep:dog
     %speed ratios
 
-    U1(Ndogs+1:N,:) = U1(Ndogs+1:N,:)+(r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
-
+    %U1(Ndogs+1:N,:) = U1(Ndogs+1:N,:)+(r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
+    U1(Ndogs+1:N,:) = (r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
     %---------------------------------%
     % calculate rho based on model choice
     [~,l] = voronoiProjectToBoundary(DT,U1);
@@ -233,23 +236,50 @@ for t = 1:tmax
 
 end
 % 
-S = unifMixMetric(N,Ndogs,delaunayTriangulation(X(Ndogs+1:end,:)),X_0);
+% S = unifMixMetric(N,Ndogs,delaunayTriangulation(X(Ndogs+1:end,:)),X_0);
 %disp(S)
+% muMixing = zeros(tmax,1);
+% period = 400;
+% for t=1:tmax
+%     % disp(t)
+%     muMixing(t)=0;
+%     for tau=-1*period:period
+% 
+%         if (t+tau<1) || t+tau>tmax
+%             continue
+%         end
+%         muMixing(t) = muMixing(t)+ sum((DistMatrixCell{t+tau}-DistMatrixCell{t}).^2,'all')./(Nsheep^2-Nsheep);
+%     end
+% end
+% muMixing = muMixing./(2*period);
+% S1 = DiffOfExponentials(N,Ndogs,DT_t{1},DT_t{t});
+% disp(S1)
+% times = linspace(1,tmax,tmax);
+% modfun = @(a,t) a(1).*tanh(a(2).*t./log(2));
+% mdl = fitnlm(times,muMixing,modfun,[6 3]);
+% aEstimated = mdl.Coefficients.Estimate;
+% modFunT = @(t)modfun(aEstimated,t);
+% regress = arrayfun(modFunT,times);
 
-S1 = DiffOfExponentials(N,Ndogs,DT_t{1},DT_t{t});
-disp(S1)
-times = uint32(1):uint32(t);
+% fig2 = figure(2);
+% hold on
+% scatter(times,muMixing,'blue','filled')
+% %plot(times,regress,"Color","red","LineWidth",2)
+% %disp(mdl)
+% title("Mixing vs Time")
+% xlabel("Time (number of time steps)")
+% ylabel("mu")
 
-fig2 = figure(2);
-scatter(times, pressures(times));
-title("Pressure vs Time")
+% fig2 = figure(2);
+% scatter(times, pressures(times));
+% title("Pressure vs Time")
+% 
+% fig3 = figure(3);
+% scatter(times, CMDrift(times));
+% title("Magnitude of Center of Mass Drift From (20,20) vs Time")
+% 
+% fig4 = figure(4);
+% plot(times,Polarization_t(times))
+% title("Polarization vs Time")
 
-fig3 = figure(3);
-scatter(times, CMDrift(times));
-title("Magnitude of Center of Mass Drift From (20,20) vs Time")
-
-fig4 = figure(4);
-plot(times,Polarization_t(times))
-title("Polarization vs Time")
-
-save("data.mat",'DT_t','U_t');
+% save("data.mat",'DT_t','U_t');

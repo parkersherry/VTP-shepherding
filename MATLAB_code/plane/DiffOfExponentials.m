@@ -16,7 +16,6 @@ Gtmax = graph(Etmax(:,1),Etmax(:,2));
 
 A0 = adjacency(G0);
 Atmax = adjacency(Gtmax);
-
 diff = expm(A0)-expm(Atmax);
 diff = diff .* diff';
-S = sum(diff,"all")/(N^2);
+S = sum(diff,"all")/(N*12);

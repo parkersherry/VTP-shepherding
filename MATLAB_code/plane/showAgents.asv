@@ -19,12 +19,11 @@ hold on
 
 %---------------------------%
 if plotTSX
-    timeStratifiedX( ~any(timeStratifiedX,2), : ) = [];
-    mem = scatter(timeStratifiedX(:,1),timeStratifiedX(:,2),40, 'green','filled',"s");
-    mem.AlphaData = 5.*expDecay;
-    mem.MarkerFaceAlpha = 'flat';
-    CM = sum(expDecay.*timeStratifiedX,1)./sum(expDecay);
-    scatter(CM(1),CM(2),'red','s')
+
+timeStratifiedX( ~any(timeStratifiedX,2), : ) = [];
+mem = scatter(timeStratifiedX(:,1),timeStratifiedX(:,2),40, 'green','filled',"s");
+mem.AlphaData = 5.*expDecay;
+mem.MarkerFaceAlpha = 'flat';
 
 end
 %---------------------------%
@@ -33,6 +32,7 @@ colormap(pallette);
 
 hold on
 scatter(X(1:Ndogs,1), X(1:Ndogs,2), 'filled','red')
+
 % scatter(positions(:,1), positions(:,2), 'green')
 % scatter(equil(:,1), equil(:,2))
 % scatter(CM(:,1), CM(:,2),'black')

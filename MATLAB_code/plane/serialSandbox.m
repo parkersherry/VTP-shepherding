@@ -1,4 +1,4 @@
-function serialSandbox(filename,N,L,alpha,tmax,dogTar,memDuration,position_seed,angle_seed,Ndogs,boundary)
+function a = serialSandbox(filename,N,L,alpha,tmax,dogTar,memDuration,position_seed,angle_seed,Ndogs,boundary)
 arguments
     filename (1,:) char
     N (1,1) double {mustBeInteger,mustBePositive}
@@ -34,9 +34,10 @@ end
 
 %% Initial conditions
 nu = ones(N,1);
+Nsheep = N-Ndogs;
 
-ic_rad=sqrt(N)*L;
-
+ic_radSheep=sqrt(Nsheep)*L;
+ic_radDog=sqrt(Ndogs)*L;
 % sets seed
 rng(position_seed);
 FourierCoeff = zeros([10 10 3]);
@@ -44,10 +45,9 @@ FourierCoeff = zeros([10 10 3]);
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = ic_rad*(2*rand(Ndogs,2) - 1)-2*sqrt(2*N)*L;
-X(Ndogs+1:N,:) = ic_rad*(2*rand(N-Ndogs,2) - 1)-sqrt(2*N)*L;
+X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1)-sqrt(2*Nsheep)*L - sqrt(2*Ndogs)*L;
+X(Ndogs+1:N,:) = ic_radSheep*(2*rand(Nsheep,2) - 1)-sqrt(Nsheep)*L;
 
-Nsheep = N-Ndogs;
 
 % sets seed
 rng(angle_seed);
@@ -85,7 +85,8 @@ U(Ndogs+1:end,:) = g(Ndogs+1:end).*U(Ndogs+1:end,:);
 LastSeen = zeros(N,1);
 equil = 0;
 TimeStratifiedX = 0;
-
+DistMatrixCell = cell(1,tmax);
+alphaHull_T = cell(1,tmax);
 scalarF = boundary;
 
 %% Time for loop
@@ -101,8 +102,7 @@ for t = 1:tmax
     DT_t{t} = DT;
     U_t(:,:,t) = U;
     X_T(:,:,t) = X;
-    CMDrift(t) = vecnorm(mean(X(Ndogs+1:N,:)-[20 20]),2,2);
-    pressures(t) = voronoiPressure(DT);
+    DistMatrixCell{t} = distanceMixMetric(N,Ndogs,X,X);
 
     %---------------------------------%
 
@@ -111,13 +111,14 @@ for t = 1:tmax
 
     %---------------------------------%
     prefVel = gradPreferenceField(X,FourierCoeff,scalarF);
-    
+
     %Memory Dognamics
     if Ndogs>0
 
         DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha,memDuration);
         U1 = DMS{1};
         LastSeen = DMS{4};
+        alphaHull_T{t} = DMS{3};
         if (DMS{7})
             break
         end
@@ -134,7 +135,7 @@ for t = 1:tmax
     %add up all contributions to the velocity; divide by 5 for sheep:dog
     %speed ratios
 
-    U1(Ndogs+1:N,:) = U1(Ndogs+1:N,:)+(r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
+    U1(Ndogs+1:N,:) = (r(Ndogs+1:N,:) + h(Ndogs+1:N,:) + nu(Ndogs+1:N).*a(Ndogs+1:N,:)+prefVel(Ndogs+1:N,:))./((1 + nu(Ndogs+1:N)));
 
     %---------------------------------%
     % calculate rho based on model choice
@@ -160,8 +161,10 @@ for t = 1:tmax
     U(Ndogs+1:end,:) = g(Ndogs+1:end).*U1(Ndogs+1:end,:);
     %---------------------------------%
 
-    X = X + U;
+    U(1:Ndogs,:) = U1(1:Ndogs,:);
 
+    X = X + U;
+    %showAgents(X,U,tar,DT,false,Ndogs,20,t,[0 0],alphaHull,TimeStratifiedX,false,expDecay,0,hsv,'zero');
 
     % display progress
     barwidth = 60;
@@ -175,6 +178,10 @@ for t = 1:tmax
 
 
 end
-%
 
-save(filename,'N','L','nu','alpha','tmax','dogTar','position_seed','angle_seed','Ndogs','DT_t','U_t');
+% times = linspace(1,tmax,tmax);
+% modfun = @(a,t) a(1).*tanh(a(2).*t./log(2));
+% mdl = fitnlm(times,muMixing,modfun,[6 3]);
+% a = mdl.Coefficients.Estimate;
+save(filename,'N','tmax','position_seed','angle_seed','alphaHull_T','DistMatrixCell','X_T','U_t');
+%save(filename,'position_seed','angle_seed','N','aEstimated');

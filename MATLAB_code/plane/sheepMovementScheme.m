@@ -5,12 +5,12 @@ fun = @(x) transition(x,transition_func);
 funDog = @(x) transition(x,dog_trans_func);
 
 %VERY NOT CONFIDENT IN THIS
-dogL = 65*L/2;
+dogL = 65*L/5;
 
 LArrRepulsion = L.*ones(numel(d),1);
 
 LArrAttractionToCM = L.*ones(numel(d),1);
-ToCMStrength = ones(numel(d),1);
+ToCMStrength = 3.*ones(numel(d),1);
 % logical array which returns 0 if dog is nearest neighbour
 nearestIsDog = nearest >= Ndogs;
 
@@ -45,13 +45,12 @@ for j = Ndogs+1:N
             end
 
             sDog = funDog(rToDogNorm/dogL);
-            rToDog(j,:) = 0.5 * (1+cosTheta)*sDog .* rToDog(j,:)./rToDogNorm;
+            rToDog(j,:) = 0.5.*(1+cosTheta)*sDog .* rToDog(j,:)./rToDogNorm;
 
             %values for nu, distance for repulsion and distance of CM
             %attraction for sheep near a dog
             nu(j) = 1/10;
-            LArrRepulsion(j) = LArrRepulsion(j)/5;
-            LArrAttractionToCM(j) = LArrAttractionToCM(j)*5;
+            LArrAttractionToCM(j) = LArrAttractionToCM(j)/5;
             ToCMStrength(j) = 5;
         end
     end

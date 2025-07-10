@@ -1,4 +1,4 @@
-function G = goToCM(X, Firstnbhd, N, Ndogs,trans_func,L)
+function G = goToCM(X, Firstnbhd, N, Ndogs,trans_func,L,cutoff)
 
 arguments
 
@@ -8,6 +8,7 @@ arguments
     Ndogs   double
     trans_func 
     L
+    cutoff = 1000*L
 end
 
 G = zeros(N,2);
@@ -19,8 +20,10 @@ for i=1:N
     CM = mean(X(FirstSheepNbhd,:));
     G(i,:) = CM - X(i,:);
 end
+Gnormed = vecnorm(G,2,2);
 f = @(x) transition(x,trans_func);
-s = arrayfun(f,vecnorm(G,2,2)./L);
+s = arrayfun(f,Gnormed./L);
+s(find(Gnormed>cutoff)) = 0;
 G = s.*G;
 
 end

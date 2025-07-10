@@ -19,12 +19,12 @@ hold on
 
 %---------------------------%
 if plotTSX
-    timeStratifiedX( ~any(timeStratifiedX,2), : ) = [];
-    mem = scatter(timeStratifiedX(:,1),timeStratifiedX(:,2),40, 'green','filled',"s");
-    mem.AlphaData = 5.*expDecay;
-    mem.MarkerFaceAlpha = 'flat';
-    CM = sum(expDecay.*timeStratifiedX,1)./sum(expDecay);
-    scatter(CM(1),CM(2),'red','s')
+    timeStratifiedX( find(~any(timeStratifiedX')), : ) = [];
+    mem = scatter(timeStratifiedX(:,1),timeStratifiedX(:,2),40, purple,'filled',"s");
+    % mem.AlphaData = 5.*expDecay;
+    % mem.MarkerFaceAlpha = 'flat';
+    % CM = sum(expDecay.*timeStratifiedX,1)./sum(expDecay);
+    % scatter(CM(1),CM(2),'red','s')
 
 end
 %---------------------------%
@@ -49,7 +49,7 @@ end
 %---------------------------%
 qs = 3;
 
-quiver(X(:,1),X(:,2),qs*U(:,1),qs*U(:,2),'off', 'k');
+%quiver(X(:,1),X(:,2),qs*U(:,1),qs*U(:,2),'off', 'k');
 
 C = tar.Components;
 for m=1:size(C,1)

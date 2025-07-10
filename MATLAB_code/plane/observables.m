@@ -1,8 +1,9 @@
-clear all
-N = 70;
-memory = ceil(linspace(1,15,15));
+% clear all
+N = 170;
+memory = ceil(linspace(1,200,200));
 Nseeds = 5;
 times = linspace(1,1500,1500);
+
 
 convexity = zeros(numel(memory),Nseeds);
 pressure = zeros(numel(memory),Nseeds);
@@ -10,7 +11,8 @@ polarizationArr = zeros(numel(memory),Nseeds);
 for seedIndex = 1:Nseeds
     disp("-------seedIndex = " + string(seedIndex) + '--------')
     for memIndex = 1:numel(memory)
-        fname = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/Memory Vs Everything/mem_' +string(memory(memIndex))+ '_run_'+string(seedIndex)+'.mat';
+        disp("-------memIndex = " + string(memIndex))
+        fname = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/Memory Vs EverythingN170/mem_' +string(memory(memIndex))+ '_run_'+string(seedIndex)+'.mat';
         load(fname);
         areasRatio = zeros(1,tmax);
         Polarization_t = zeros(1,tmax);
@@ -34,11 +36,6 @@ convexity = mean(convexity,2);
 pressure = mean(pressure,2);
 polarizationArr = mean(polarizationArr,2);
 
-fig1 = figure(1);
-scatter(memory,convexity,'filled','blue')
+fnameSave = "/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/memVsAllN170.mat";
 
-fig2 = figure(2);
-scatter(memory,pressure,'filled','blue')
-
-fig3 = figure(3);
-scatter(memory,polarizationArr,'filled','blue')
+save(fnameSave,'memory','polarizationArr','pressure','convexity');

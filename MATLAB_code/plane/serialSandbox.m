@@ -14,9 +14,8 @@ arguments
 end
 
 %% Parameters
-pressures = zeros(tmax,1);
-CMDrift = zeros(tmax,1);
 
+Xmem = zeros(N,2);
 vMaxSheep = 1/2;
 HomingDistance = 10*L;
 
@@ -115,10 +114,12 @@ for t = 1:tmax
     %Memory Dognamics
     if Ndogs>0
 
-        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha,memDuration);
+        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,Xmem,scalarF,prefVel(1:Ndogs,:),1,memDuration);
         U1 = DMS{1};
         LastSeen = DMS{4};
         alphaHull_T{t} = DMS{3};
+        Xmem = DMS{5};
+
         if (DMS{7})
             break
         end

@@ -8,14 +8,14 @@ arguments
 end
 
 % Define constants
-R = sqrt(NumSheepNbhd)*L;
+R = -1*sqrt(NumSheepNbhd)*L;
 
 % Find equilibrium position (colinear point with CM and dogtarget which
 % places CM between V and dog target
 V = homeToTarget(tar, CM);
 Vnormed = vecnorm(V,2,2);
 if ~(Vnormed==0)
-    V = -V./vecnorm(V,2,2);
+    V = V./vecnorm(V,2,2);
 end
 %scaling taken from observed results
 V = V.*R;

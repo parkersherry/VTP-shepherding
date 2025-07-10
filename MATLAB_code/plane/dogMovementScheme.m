@@ -89,7 +89,6 @@ ExpAmplitude = 0.43;
 ExpShift = 0.48;
 
 repelConvHullStrength = 1;
-
 for i = 1:Ndogs
 
 
@@ -100,55 +99,57 @@ for i = 1:Ndogs
     end
 
     SheepNbhdPast = find(LastSeen > timeThreshold);
-
-    % calculate local CM
-    J = numel(SheepNbhdPast);
-
+    forgotten = find((~(LastSeen > timeThreshold)).*(LastSeen~=0));
     
 
-    for j=1:J
-        X_j = X_T(:,:,LastSeen(SheepNbhdPast(j)));
-        TotalX(SheepNbhdPast(j),:) = X_j(SheepNbhdPast(j),:);
-    end
+    % for j=1:J
+    %     X_j = X_T(:,:,LastSeen(SheepNbhdPast(j)));
+    %     TotalX(SheepNbhdPast(j),:) = X_j(SheepNbhdPast(j),:);
+    % end
 
     %-----------------------%
     %if you can see the residual image of the sheep then obvi there is no
     %sheep there and you should forget it
-    ToDel = zeros(size(SheepNbhdPast));
-    inside = inhull(TotalX(SheepNbhdPast,:),P);
-    for j=1:numel(SheepNbhdPast)
-        if (inside(j)==1)
-            continue
+    if (~isempty(SheepNbhdPast))
+        ToDel = zeros(size(SheepNbhdPast));
+        inside = inhull(Xmem(SheepNbhdPast,:),P);
+        for j=1:numel(SheepNbhdPast)
+            if (inside(j)==1)
+                continue
+            end
+            Xcoords = [X(i,1) Xmem(SheepNbhdPast(j),1)];
+            %disp(size(Xcoords))
+            Ycoords = [X(i,2) Xmem(SheepNbhdPast(j),2)];
+            [xIntersect,~] = polyxpoly(Xcoords,Ycoords,P(:,1),P(:,2));
+            if (isempty(xIntersect))
+                ToDel(j) = 1;
+            end
         end
-        Xcoords = [X(i,1) TotalX(SheepNbhdPast(j),1)];
-        %disp(size(Xcoords))
-        Ycoords = [X(i,2) TotalX(SheepNbhdPast(j),2)];
-        [xIntersect,~] = polyxpoly(Xcoords,Ycoords,P(:,1),P(:,2));
-        if (isempty(xIntersect))
-            ToDel(j) = 1;
-        end
+        ToDel = find(ToDel);
+        Xmem(SheepNbhdPast(ToDel),:) = 0;
+        LastSeen(SheepNbhdPast(ToDel)) = 0;
+    
+        SheepNbhdPast(ToDel) = [];
     end
-    ToDel = find(ToDel);
-    TotalX(SheepNbhdPast(ToDel),:) = 0;
-    LastSeen(SheepNbhdPast(ToDel)) = 0;
-
-    SheepNbhdPast(ToDel) = [];
+    
     %-----------------------%
     CurrAllNbhd = [nbhd{i,1} nbhd{i,2}];
 
     CurrAllNbhd = unique(CurrAllNbhd);
-    CurrSheepnbhd = CurrAllNbhd(CurrAllNbhd>Ndogs);
+    forgotten = setdiff(forgotten,CurrAllNbhd);
+    CurrSheepnbhd = CurrAllNbhd(find(CurrAllNbhd>Ndogs));
 
     Xmem(CurrSheepnbhd,:) = X(CurrSheepnbhd,:);
     
     LastSeen(CurrSheepnbhd) = t;
-    TotalX(CurrSheepnbhd,:) = X(CurrSheepnbhd,:);
+    currMeanVel = mean(U(CurrSheepnbhd,:),1);
+
+    %TotalX(CurrSheepnbhd,:) = X(CurrSheepnbhd,:);
     SheepNbhd = unique(union(SheepNbhdPast,CurrSheepnbhd));
     
-    forgotten = (t-LastSeen)>recallDelay;
-    Xmem(find(forgotten),:) = 0;
+    Xmem(forgotten,:) = 0;
     if strcmp(scalarField,'fence')
-        indices = find(~((TotalX(SheepNbhd,1)<20).*(TotalX(SheepNbhd,2)<20)));
+        indices = find(~((Xmem(SheepNbhd,1)<20).*(Xmem(SheepNbhd,2)<20)));
         SheepNbhd(indices) = [];
         if (isempty(SheepNbhd))
             disp("all sheep are outside the fence")
@@ -156,15 +157,18 @@ for i = 1:Ndogs
             break
         end
     end
+    
+    SheepNbhd( find(~any(Xmem(SheepNbhd,:)')), : ) = [];
 
     if (isempty(SheepNbhd))
         disp("The dog sees no sheep")
         stopSimul = true;
         break
     end
+
     exponentialDecay = ExpAmplitude.*exp(decayRate.*(LastSeen(SheepNbhd)-t)./recallDelay) + ExpShift;
     sumExpDecay=(sum(exponentialDecay));
-    CM = sum(TotalX(SheepNbhd,:).*exponentialDecay,1)./sumExpDecay;
+    CM = sum(Xmem(SheepNbhd,:).*exponentialDecay,1)./sumExpDecay;
     equilibrium = findDogEquil(CM,L , tar,numel(SheepNbhd));
 
     % finds sheep agent with indexMax
@@ -176,7 +180,7 @@ for i = 1:Ndogs
         CMtoDog = CMtoDog ./CMtoDogNorm ;
     end
 
-    DogToSheep = xDog-TotalX(SheepNbhd,:);
+    DogToSheep = xDog-Xmem(SheepNbhd,:);
     DogToSheepNorm = vecnorm(DogToSheep,2,2);
     if (DogToSheepNorm~=0)
         DogToSheep = DogToSheep./DogToSheepNorm;
@@ -206,7 +210,7 @@ for i = 1:Ndogs
     % equilibrium ON protoco
 
 
-    XsheepMaxIndex = TotalX(SheepToCollect,:);
+    XsheepMaxIndex = Xmem(SheepToCollect,:);
 
     goalLocation = (XsheepMaxIndex - CM);
     goalLocationNorm = vecnorm(goalLocation,2,2);
@@ -268,8 +272,8 @@ for i = 1:Ndogs
     goalLocationArr(i,:) = goalLocation;
 
     CMs(i,:) = CM;
-    %Xtotals{i} = TotalX;
-
+    %Xtotals{i} = Xmem;
+    Xmem(SheepNbhd,:) = Xmem(SheepNbhd,:) + currMeanVel;
 end
 
 if (strcmp(scalarField,'fence'))
@@ -293,4 +297,4 @@ if (stalkDirNorm~=0)
     stalkDir = stalkDir./stalkDirNorm;
 end
 U(indices,:) = 0.02.*(stalkDir);
-output = {U, goalLocationArr,P,LastSeen,TotalX,exponentialDecay,stopSimul,Xmem};
+output = {U, goalLocationArr,P,LastSeen,Xmem,exponentialDecay,stopSimul};

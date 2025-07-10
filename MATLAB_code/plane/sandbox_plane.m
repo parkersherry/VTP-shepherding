@@ -1,7 +1,7 @@
 %% Parameters
 % clear all;
 warning('off','all')
-N = 51;
+N = 600;
 alpha = Inf;%sqrt(N);
 Ndogs = 1;
 L = 3.3;
@@ -27,7 +27,7 @@ erase='';
 % Display
 display=true;   % if true, will plot agents when code is run
 fixframe = false;
-frameinrad = 50;
+frameinrad = 25;
 Xmem = zeros(N,2);
 % no idea
 fdim = 1;
@@ -51,8 +51,8 @@ FourierCoeff = zeros([10 10 3]);
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1)-2*sqrt(Nsheep)*L - sqrt(2*Ndogs)*L;
-X(Ndogs+1:N,:) = ic_radSheep*(2*rand(Nsheep,2) - 1)-sqrt(Nsheep)*L;
+X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1)-2*sqrt(Nsheep)*L ;%- sqrt(2*Ndogs)*L;
+X(Ndogs+1:N,:) = ic_radSheep*(2*rand(Nsheep,2) - 1);%-sqrt(Nsheep)*L;
 
 rainbowPalette = hsv; % better for colourblind to use cool
 colours = (mod(1:Nsheep, Nsheep)+1)';
@@ -122,7 +122,6 @@ g(tooLarge) = vMaxSheep./sizeOfVel(tooLarge);
 U(Ndogs+1:end,:) = g(Ndogs+1:end).*U(Ndogs+1:end,:);
 LastSeen = zeros(N,1);
 equil = 0;
-TimeStratifiedX = 0;
 muMixing = zeros(tmax,1);
 scalarF = "zero";
 DistMatrixCell = cell(1,tmax);
@@ -155,12 +154,12 @@ for t = 1:tmax
     %Memory Dognamics
     if Ndogs>0
 
-        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,scalarF,prefVel(1:Ndogs,:),alpha,15);
+        DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,LastSeen,Xmem,scalarF,prefVel(1:Ndogs,:),alpha,240);
         U1 = DMS{1};
         equil = DMS{2};
         alphaHull = DMS{3};
         LastSeen = DMS{4};
-        TimeStratifiedX = DMS{5};
+        Xmem = DMS{5};
         plotTimeStratifiedX = true;
         expDecay = DMS{6};
         if (DMS{7})
@@ -199,7 +198,7 @@ for t = 1:tmax
 
     % plot
     if display==true
-        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,alphaHull,TimeStratifiedX,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF);
+        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,alphaHull,Xmem,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF);
     end
     %---------------------------------%
 

@@ -1,7 +1,8 @@
 %% Parameters
 % clear all;
 warning('off','all')
-N = 600;
+
+N = 100;
 alpha = Inf;%sqrt(N);
 Ndogs = 1;
 L = 3.3;
@@ -27,7 +28,7 @@ erase='';
 % Display
 display=true;   % if true, will plot agents when code is run
 fixframe = false;
-frameinrad = 25;
+frameinrad = 130;
 Xmem = zeros(N,2);
 % no idea
 fdim = 1;
@@ -53,13 +54,13 @@ X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
 X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1)-2*sqrt(Nsheep)*L ;%- sqrt(2*Ndogs)*L;
 X(Ndogs+1:N,:) = ic_radSheep*(2*rand(Nsheep,2) - 1);%-sqrt(Nsheep)*L;
-
+% X(2:51,:) = X(2:51,:)+100;
 rainbowPalette = hsv; % better for colourblind to use cool
 colours = (mod(1:Nsheep, Nsheep)+1)';
 angles = atan2(X(Ndogs+1:N,2),X(Ndogs+1:N,1));
 [~,permutation] = sort(angles);
 X(Ndogs+1:N,:) = circshift(X(permutation+Ndogs,:),Nsheep);
-
+X(10,:) = X(10,:) + 70;
 % sets seed
 %rng(75166);
 
@@ -146,7 +147,7 @@ for t = 1:tmax
     %---------------------------------%
 
     % get alignment vector scaled by current velocity
-    a = alignTo(X,U,nbhd,'expReciprocal', sheepThetaVision, Ndogs,vMaxSheep);
+    a = alignTo(X,U,nbhd,'sin', sheepThetaVision, Ndogs,vMaxSheep);
 
     %---------------------------------%
     prefVel = gradPreferenceField(X,FourierCoeff,scalarF);
@@ -162,6 +163,7 @@ for t = 1:tmax
         Xmem = DMS{5};
         plotTimeStratifiedX = true;
         expDecay = DMS{6};
+        subflocksCell = DMS{8};
         if (DMS{7})
             break
         end
@@ -172,6 +174,7 @@ for t = 1:tmax
             alphaHull(end+1,:) = alphaHull(1,:);
         end
         plotTimeStratifiedX = false;
+        subflocksCell = {X};
     end
     %---------------------------------%
     %get the repulsion vector and value of sigma curve for each agent
@@ -198,7 +201,7 @@ for t = 1:tmax
 
     % plot
     if display==true
-        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,alphaHull,Xmem,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF);
+        showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equil,alphaHull,Xmem,plotTimeStratifiedX,expDecay,colours,rainbowPalette,scalarF,subflocksCell);
     end
     %---------------------------------%
 
@@ -253,7 +256,7 @@ end
 % muMixing = muMixing./(2*period);
 % S1 = DiffOfExponentials(N,Ndogs,DT_t{1},DT_t{t});
 % disp(S1)
-% times = linspace(1,tmax,tmax);
+times = linspace(1,tmax,tmax);
 % modfun = @(a,t) a(1).*tanh(a(2).*t./log(2));
 % mdl = fitnlm(times,muMixing,modfun,[6 3]);
 % aEstimated = mdl.Coefficients.Estimate;
@@ -277,8 +280,12 @@ end
 % scatter(times, CMDrift(times));
 % title("Magnitude of Center of Mass Drift From (20,20) vs Time")
 % 
-% fig4 = figure(4);
-% plot(times,Polarization_t(times))
+fig4 = figure(4);
+plot(times,Polarization_t(times))
+title("Polarization vs Time")
+
+% fig5 = figure(5);
+% plot(times(4000:5000),Polarization_t(4000:5000))
 % title("Polarization vs Time")
 
 % save("data.mat",'DT_t','U_t');

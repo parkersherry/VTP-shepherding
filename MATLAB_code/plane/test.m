@@ -58,36 +58,36 @@
 % %     end
 % %
 % % end
-
-load("/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/Memory Vs EverythingN70/seeds.mat")
-N = [170 270];%ceil(linspace(25,300,20));
-memory = ceil(linspace(1,200,200));
-Nseeds = 15;
-tar = Target();
-for NIndex = 1:numel(N)
-    disp("---------------- " + newline+ newline+ newline  )
-    disp("NIndex = " + string(NIndex))
-    disp("---------------- "+ newline+ newline+ newline)
-    temp=zeros(numel(memory),Nseeds);
-    for seedIndex = 6:Nseeds
-        disp("-------seedIndex = " + string(seedIndex) + '--------')
-        posSeed = posSeeds(seedIndex);
-        angSeed = angle_seeds(seedIndex);
-        for memIndex = 1:numel(memory)
-            if(seedIndex == 6 && memIndex <56 && NIndex ==1)
-                continue
-            end
-
-
-            fnameDog = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/Memory Vs EverythingN'+string(N(NIndex))+'/mem_' +string(memory(memIndex))+ '_run_'+string(seedIndex)+'.mat';
-
-
-            serialSandbox(fnameDog,N(NIndex),3.3,Inf,1500,tar,memory(memIndex),posSeed,angSeed,1,'zero');
-
-        end
-
-    end
-end
+%
+% load("/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/Memory Vs EverythingN70/seeds.mat")
+% N = [170 270];%ceil(linspace(25,300,20));
+% memory = ceil(linspace(1,200,200));
+% Nseeds = 15;
+% tar = Target();
+% for NIndex = 1:numel(N)
+%     disp("---------------- " + newline+ newline+ newline  )
+%     disp("NIndex = " + string(NIndex))
+%     disp("---------------- "+ newline+ newline+ newline)
+%     temp=zeros(numel(memory),Nseeds);
+%     for seedIndex = 6:Nseeds
+%         disp("-------seedIndex = " + string(seedIndex) + '--------')
+%         posSeed = posSeeds(seedIndex);
+%         angSeed = angle_seeds(seedIndex);
+%         for memIndex = 1:numel(memory)
+%             if(seedIndex == 6 && memIndex <56 && NIndex ==1)
+%                 continue
+%             end
+%
+%
+%             fnameDog = '/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/Memory Vs EverythingN'+string(N(NIndex))+'/mem_' +string(memory(memIndex))+ '_run_'+string(seedIndex)+'.mat';
+%
+%
+%             serialSandbox(fnameDog,N(NIndex),3.3,Inf,1500,tar,memory(memIndex),posSeed,angSeed,1,'zero');
+%
+%         end
+%
+%     end
+% end
 %
 % aMean = mean(temp,2);
 % aMin = min(temp,[],2);
@@ -113,3 +113,37 @@ end
 % scatter(memory,aMean,'filled','black')
 % plot(xArr,regressPlt,'color','black','LineWidth',2)
 % title("Timed Mean Mixing vs Memory")
+
+tar = Target();
+vmax = linspace(1/100,1/2,25);
+tmaxarr = 5000;
+% pols = cell(10,1);
+% temp = zeros(10,1000);
+nuArr = linspace(0,5,21);
+disp(nuArr)
+for seedIndex = 1:5
+    disp(seedIndex)
+    posSeed = randi(10000);
+    angSeed = randi(10000);
+    for vmaxIndex = 1:25
+        for nuIndex = 1:21
+
+
+
+            fname = "/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/VaryVmax/vMax" + string(vmax(vmaxIndex)) +"_nu_"+string(nuArr(nuIndex))+ "_run_"+string(seedIndex)+".mat";
+            % load(fname)
+            % temp(seedIndex,:) = Polarization_t;
+            serialSandbox(fname,nuArr(nuIndex),50,3.3,Inf,tmaxarr,tar,1,posSeed,angSeed,0,'zero',vmax(vmaxIndex));
+        end
+    end
+    % pols{vmaxIndex} = mean(temp,1);
+end
+% fig1 = figure(1);
+% hold on
+% for i=2:10
+%     dname = 'vmax = ' + string(vmax(i));
+%     plot(1:tmaxarr(i),pols{i},'DisplayName',dname,'LineWidth',i/2)
+% end
+% lgd = legend('FontSize',15,'Location','northeastoutside');
+%
+%

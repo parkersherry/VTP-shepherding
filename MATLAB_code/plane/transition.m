@@ -11,6 +11,8 @@ else
     switch spec
         case 'indicator'
             y = 1;
+        case 'sin'
+            y = sin(pi*x);
         case 'mollifier'
             y = exp(1-1/(1-x^2));
         case 'cubic'

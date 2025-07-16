@@ -9,11 +9,13 @@ arguments
     Ndogs
     vMaxSheep
 end
+adjust = false;
+
 N = size(U,1);
 velBaseds = ones(N,1);
 a = zeros(N,2);
 g = @(x) transition(x,transition_func);
-w = @(x) g(1/pi*acos(x));
+w = @(x) g((1/pi)*acos(x));
 for i=Ndogs+1:N
     ui = U(i,:);
     ui = ui/norm(ui,2);
@@ -45,8 +47,10 @@ a = (1/6)*a;
 s = ones(N,1);
 
 s(Ndogs+1:end,:) = 2-arrayfun(g,abs(vecnorm(U(Ndogs+1:end,:),2,2)./vMaxSheep));
-a = s.*a;
-a = velBaseds.*a;
+if adjust
+    a = s.*a;
+    a = velBaseds.*a;
+end
 end
 
 % validation

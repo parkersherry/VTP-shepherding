@@ -1,4 +1,4 @@
-function output = showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equilibrium,alphaHull,timeStratifiedX,plotTSX,expDecay,colours,pallette,scalarField)
+function output = showAgents(X,U,tar,DT,fixframe,Ndogs,frameinrad,t,equilibrium,alphaHull,timeStratifiedX,plotTSX,expDecay,colours,pallette,scalarField,subflocksCell)
 
 
 purple = [128, 0 , 128] / 255;
@@ -8,14 +8,19 @@ clipToVoronoi=false;
 % NEED CM DEFINED HERE!
 
 fig = figure(1);
+scatter(X(1:Ndogs,1), X(1:Ndogs,2), 'filled','red')
+hold on
 N = numel(X(:,1));
 
 
 %---------------------------%
 %for rainbow sheep uncomment
 %scatter(X(Ndogs+1:N,1),X(Ndogs+1:N,2), 36,colours,'filled')
-scatter(X(Ndogs+1:N,1),X(Ndogs+1:N,2),10,"blue",'filled')
-hold on
+%scatter(X(Ndogs+1:N,1),X(Ndogs+1:N,2),10,"blue",'filled')
+% disp(numel(subflocksCell))
+for i=1:numel(subflocksCell)
+    scatter(subflocksCell{i}(:,1),subflocksCell{i}(:,2),'filled')
+end
 
 %---------------------------%
 if plotTSX
@@ -32,7 +37,6 @@ end
 colormap(pallette);
 
 hold on
-scatter(X(1:Ndogs,1), X(1:Ndogs,2), 'filled','red')
 % scatter(positions(:,1), positions(:,2), 'green')
 % scatter(equil(:,1), equil(:,2))
 % scatter(CM(:,1), CM(:,2),'black')
@@ -49,7 +53,7 @@ end
 %---------------------------%
 qs = 3;
 
-%quiver(X(:,1),X(:,2),qs*U(:,1),qs*U(:,2),'off', 'k');
+quiver(X(:,1),X(:,2),qs*U(:,1),qs*U(:,2),'off', 'k');
 
 C = tar.Components;
 for m=1:size(C,1)

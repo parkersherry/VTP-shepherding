@@ -49,7 +49,7 @@ for j = Ndogs+1:N
 
             %values for nu, distance for repulsion and distance of CM
             %attraction for sheep near a dog
-            nu(j) = 1/10;
+            % nu(j) = 1/10;
             LArrAttractionToCM(j) = LArrAttractionToCM(j)/5;
             ToCMStrength(j) = 5;
         end
@@ -58,7 +58,7 @@ end
 
 s = arrayfun(fun, d./LArrRepulsion);
 r = s .* r;  % rescale to length s
-toCM = ToCMStrength.*goToCM(X,Firstnbhd,N,Ndogs,'linear2',LArrAttractionToCM);
+toCM = ToCMStrength.*goToCM(X,Firstnbhd,N,Ndogs,'linear2',LArrAttractionToCM,L);
 
 % ignore flock repulsion if dog is nearest neigbhour
 r(:,1) = r(:,1) .* nearestIsDog;

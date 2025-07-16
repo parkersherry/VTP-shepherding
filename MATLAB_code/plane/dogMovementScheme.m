@@ -139,6 +139,9 @@ for i = 1:Ndogs
     forgotten = setdiff(forgotten,CurrAllNbhd);
     CurrSheepnbhd = CurrAllNbhd(find(CurrAllNbhd>Ndogs));
 
+    SubflockCells = {Xsheep};
+    % SubflockCells = getSubflocks(Xsheep,X(CurrSheepnbhd,:),L,N,Ndogs,{},0);
+
     Xmem(CurrSheepnbhd,:) = X(CurrSheepnbhd,:);
     
     LastSeen(CurrSheepnbhd) = t;
@@ -289,12 +292,15 @@ g(tooLarge) = 1/vecnorm(W(tooLarge,:),2,2);
 U(1:Ndogs,:) = g.*W;
 disp(find(isnan(U)))
 
-indices = find(stalk);
+%------------ Uncomment this and line 251 for stalking ------%
+% indices = find(stalk);
+% 
+% stalkDir = CMs(indices,:)-X(indices,:);
+% stalkDirNorm = vecnorm(stalkDir,2,2);
+% if (stalkDirNorm~=0)
+%     stalkDir = stalkDir./stalkDirNorm;
+% end
+% U(indices,:) = 0.02.*(stalkDir);
+%------------------------------------------------------------%
 
-stalkDir = CMs(indices,:)-X(indices,:);
-stalkDirNorm = vecnorm(stalkDir,2,2);
-if (stalkDirNorm~=0)
-    stalkDir = stalkDir./stalkDirNorm;
-end
-U(indices,:) = 0.02.*(stalkDir);
-output = {U, goalLocationArr,P,LastSeen,Xmem,exponentialDecay,stopSimul};
+output = {U, goalLocationArr,P,LastSeen,Xmem,exponentialDecay,stopSimul,SubflockCells};

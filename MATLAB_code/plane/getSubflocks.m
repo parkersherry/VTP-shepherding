@@ -15,12 +15,20 @@ subflockA = {};
 subflockB = {};
 % dbstack
 
-thresh = 9;
+thresh = 10;
 % [A,B] = deal([]);
 save = 0;
 
 longestLength = 0;
 LL_index = 0;
+% if (numel(XAtCurrSheepnbhd(:,1))<3)
+%     temp = {};
+%     for i=1:numel(XAtCurrSheepnbhd(:,1))
+%         temp{end+1} = XAtCurrSheepnbhd(i,:);
+%     end
+%     S = temp;
+%     return
+% end
 
 DT = delaunayTriangulation(XAtCurrSheepnbhd);
 E = edges(DT);
@@ -110,7 +118,7 @@ if longestLength > thresh
     %     scatter(b(1), b(2), 's')
     % end
 
-    disp(Gamma)
+    %disp(Gamma)
 
     if Gamma > dogL
         save = 1;

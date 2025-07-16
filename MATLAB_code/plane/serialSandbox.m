@@ -1,6 +1,7 @@
-function a = serialSandbox(filename,N,L,alpha,tmax,dogTar,memDuration,position_seed,angle_seed,Ndogs,boundary)
+function a = serialSandbox(filename,nuIn,N,L,alpha,tmax,dogTar,memDuration,position_seed,angle_seed,Ndogs,boundary,vMaxSheep)
 arguments
     filename (1,:) char
+    nuIn
     N (1,1) double {mustBeInteger,mustBePositive}
     L (1,1) double {mustBeNonnegative}
     alpha
@@ -11,12 +12,12 @@ arguments
     angle_seed (1,1) double {mustBeInteger} = 0
     Ndogs (1,1) double {mustBeInteger} = 0
     boundary = 'zero'
+    vMaxSheep = 1/2;
 end
 
 %% Parameters
 
 Xmem = zeros(N,2);
-vMaxSheep = 1/2;
 HomingDistance = 10*L;
 
 erase='';
@@ -73,6 +74,7 @@ U1 = zeros(N,2);
 %% Preallocation of time series variables
 U_t = zeros(N,2,tmax);
 DT_t = cell(tmax,1);
+Polarization_t = zeros(1,tmax);
 X_T = zeros(N,2,tmax);
 expDecay = zeros(N,2);
 %enforce sheep speed limit
@@ -101,8 +103,8 @@ for t = 1:tmax
     DT_t{t} = DT;
     U_t(:,:,t) = U;
     X_T(:,:,t) = X;
-    DistMatrixCell{t} = distanceMixMetric(N,Ndogs,X,X);
-
+    % DistMatrixCell{t} = distanceMixMetric(N,Ndogs,X,X);
+    Polarization_t(t) = polarization(U,Ndogs);
     %---------------------------------%
 
     % get alignment vector scaled by current velocity
@@ -130,7 +132,7 @@ for t = 1:tmax
     C = sheepMovementScheme(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd,tar,HomingDistance);
     r = C{1};
     h = C{2};
-    nu = C{3}./2;
+    nu = C{3}.*nuIn;
 
 
     %add up all contributions to the velocity; divide by 5 for sheep:dog
@@ -184,5 +186,5 @@ end
 % modfun = @(a,t) a(1).*tanh(a(2).*t./log(2));
 % mdl = fitnlm(times,muMixing,modfun,[6 3]);
 % a = mdl.Coefficients.Estimate;
-save(filename,'N','tmax','position_seed','angle_seed','alphaHull_T','DistMatrixCell','X_T','U_t');
+save(filename,'tmax','position_seed','angle_seed','Polarization_t');
 %save(filename,'position_seed','angle_seed','N','aEstimated');

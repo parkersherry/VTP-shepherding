@@ -5,7 +5,7 @@ fun = @(x) transition(x,transition_func);
 funDog = @(x) transition(x,dog_trans_func);
 
 %VERY NOT CONFIDENT IN THIS
-dogL = 65*L/5;
+dogL = L;
 
 LArrRepulsion = L.*ones(numel(d),1);
 
@@ -20,16 +20,14 @@ rnorm = vecnorm(r,2,2);
 r = r./rnorm;
 N = numel(X)/2;
 % big dog repulsion
-nu = ones(N,1);
 
 rToDog = zeros(size(X));
-
 for j = Ndogs+1:N
 
     allNbhd = [nbhd{j,1} nbhd{j,2}];
     allNbhd = unique(allNbhd);
     numJ = numel(allNbhd);
-
+    strengthenToCM = true;
     for i = 1:numJ
         if allNbhd(i) <= Ndogs
 
@@ -37,21 +35,28 @@ for j = Ndogs+1:N
             %direction of the dog's motion
             rToDog(j,:) = X(j,:) - X(allNbhd(i),:);
             rToDogNorm = vecnorm(rToDog(j,:),2,2);
-            cosTheta = dot(rToDog(j,:)./rToDogNorm, U(allNbhd(i),:)./vecnorm(U(allNbhd(i),:),2,2));
-
+            dogVelNorm = vecnorm(U(allNbhd(i),:),2,2);
+            cosTheta = 0;
+            if rToDogNorm~=0 && dogVelNorm~=0
+                cosTheta = dot(rToDog(j,:)./rToDogNorm, U(allNbhd(i),:)./dogVelNorm);
+            end
             %sheep should not chase dogs
             if cosTheta <= 0
                 cosTheta = 0;
             end
 
             sDog = funDog(rToDogNorm/dogL);
-            rToDog(j,:) = 0.5.*(1+cosTheta)*sDog .* rToDog(j,:)./rToDogNorm;
-
+            if rToDogNorm~=0
+                rToDog(j,:) = 0.5.*(1+cosTheta)*sDog .* rToDog(j,:)./rToDogNorm;
+            end
             %values for nu, distance for repulsion and distance of CM
             %attraction for sheep near a dog
             % nu(j) = 1/10;
+            if strengthenToCM
             LArrAttractionToCM(j) = LArrAttractionToCM(j)/5;
             ToCMStrength(j) = 5;
+            strengthenToCM = false;
+            end
         end
     end
 end
@@ -80,5 +85,5 @@ h = (1-abs(s)) .* h0./vecnorm(h0,2,2);   % rescale to length 1-s
 h(isnan(h)) = 0;                    % protect 0 entries
 %---------------------------------%
 
-C = {r,h,nu};
+C = {r,h};
 end

@@ -8,7 +8,7 @@ clipToVoronoi=false;
 % NEED CM DEFINED HERE!
 
 fig = figure(1);
-scatter(X(1:Ndogs,1), X(1:Ndogs,2), 'filled','red')
+scatter(X(1:Ndogs,1), X(1:Ndogs,2), 'filled','blue')
 hold on
 N = numel(X(:,1));
 
@@ -24,12 +24,13 @@ end
 
 %---------------------------%
 if plotTSX
+    timeStratifiedX = timeStratifiedX{1};
     timeStratifiedX( find(~any(timeStratifiedX')), : ) = [];
-    mem = scatter(timeStratifiedX(:,1),timeStratifiedX(:,2),40, purple,'filled',"s");
-    % mem.AlphaData = 5.*expDecay;
-    % mem.MarkerFaceAlpha = 'flat';
-    % CM = sum(expDecay.*timeStratifiedX,1)./sum(expDecay);
-    % scatter(CM(1),CM(2),'red','s')
+    mem = scatter(timeStratifiedX(:,1),timeStratifiedX(:,2),40, 'cyan','filled',"s");
+    mem.AlphaData = 5.*expDecay;
+    mem.MarkerFaceAlpha = 'flat';
+    CM = sum(expDecay.*timeStratifiedX,1)./sum(expDecay);
+    scatter(CM(1),CM(2),'red','s')
 
 end
 %---------------------------%
@@ -51,7 +52,7 @@ end
 % plot(alphaHull(:,1),alphaHull(:,2),'Color',purple)
 
 %---------------------------%
-qs = 3;
+qs = 0.5;
 
 quiver(X(:,1),X(:,2),qs*U(:,1),qs*U(:,2),'off', 'k');
 
@@ -118,5 +119,5 @@ end
 
 title(['$t=',num2str(t),'$'], 'Interpreter', 'Latex');
 hold off
-
+drawnow
 output = 0;

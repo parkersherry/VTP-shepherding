@@ -27,7 +27,7 @@
 %                   the ith dog agent wants to move to. positions(i,:)
 %                   is defined such that the ith dog agent and its target
 %                   sheep agent are collinear with the local CM.
-function output = dogMovementScheme(X_T, U,DT, Ndogs, L, tar ,t ,LastSeen,Xmem,scalarField,prefVel,alpha,memDuration)
+function output = dogMovementScheme(X_T, U,DT, Ndogs, L, tar ,t,dt ,LastSeenCell,XmemCell,scalarField,prefVel,alpha,memDuration)
 
 arguments
     X_T
@@ -37,8 +37,9 @@ arguments
     L double {mustBePositive}
     tar
     t
-    LastSeen
-    Xmem
+    dt
+    LastSeenCell
+    XmemCell
     scalarField
     prefVel
     alpha
@@ -47,6 +48,7 @@ end
 % toggles whether to prioritize being collinear with
 % local CM and dog target
 stopSimul = false;
+advectRememberedAgents = false;
 X = X_T(:,:,t);
 
 N = numel(X)/2;
@@ -73,15 +75,13 @@ SheepToCollectArr = zeros(Ndogs,1);
 
 % initialize dog agent displacement vector
 DogDisplacementVec = zeros(Ndogs, 2);
-Xtotals = cell(Ndogs);
 
 % initialize positions to which dog agents move
 goalLocationArr = DogDisplacementVec;
 
-stalk = zeros(Ndogs,1);
-dogStalkLength = 3.5;
+% stalk = zeros(Ndogs,1);
+% dogStalkLength = 3.5;
 %%%%%%%%%%THIS ONLY WORKS FOR ONE DOG
-TotalX = zeros(N,2);
 
 exponentialDecay = zeros(N,2);
 decayRate = recallDelay*0.02;
@@ -89,17 +89,20 @@ ExpAmplitude = 0.43;
 ExpShift = 0.48;
 
 repelConvHullStrength = 1;
+
+sheepIsSeen = ones(Ndogs,1);
+
 for i = 1:Ndogs
 
 
-    if t < recallDelay
+    if t*dt < recallDelay
         timeThreshold = 0;
     else
-        timeThreshold = t - recallDelay;
+        timeThreshold = t*dt - recallDelay;
     end
 
-    SheepNbhdPast = find(LastSeen > timeThreshold);
-    forgotten = find((~(LastSeen > timeThreshold)).*(LastSeen~=0));
+    SheepNbhdPast = find(LastSeenCell{i} > timeThreshold);
+    forgotten = find((~(LastSeenCell{i} > timeThreshold)).*(LastSeenCell{i}~=0));
     
 
     % for j=1:J
@@ -112,22 +115,22 @@ for i = 1:Ndogs
     %sheep there and you should forget it
     if (~isempty(SheepNbhdPast))
         ToDel = zeros(size(SheepNbhdPast));
-        inside = inhull(Xmem(SheepNbhdPast,:),P);
+        inside = inhull(XmemCell{i}(SheepNbhdPast,:),P);
         for j=1:numel(SheepNbhdPast)
             if (inside(j)==1)
                 continue
             end
-            Xcoords = [X(i,1) Xmem(SheepNbhdPast(j),1)];
+            Xcoords = [X(i,1) XmemCell{i}(SheepNbhdPast(j),1)];
             %disp(size(Xcoords))
-            Ycoords = [X(i,2) Xmem(SheepNbhdPast(j),2)];
+            Ycoords = [X(i,2) XmemCell{i}(SheepNbhdPast(j),2)];
             [xIntersect,~] = polyxpoly(Xcoords,Ycoords,P(:,1),P(:,2));
             if (isempty(xIntersect))
                 ToDel(j) = 1;
             end
         end
         ToDel = find(ToDel);
-        Xmem(SheepNbhdPast(ToDel),:) = 0;
-        LastSeen(SheepNbhdPast(ToDel)) = 0;
+        XmemCell{i}(SheepNbhdPast(ToDel),:) = 0;
+        LastSeenCell{i}(SheepNbhdPast(ToDel)) = 0;
     
         SheepNbhdPast(ToDel) = [];
     end
@@ -142,17 +145,17 @@ for i = 1:Ndogs
     SubflockCells = {Xsheep};
     % SubflockCells = getSubflocks(Xsheep,X(CurrSheepnbhd,:),L,N,Ndogs,{},0);
 
-    Xmem(CurrSheepnbhd,:) = X(CurrSheepnbhd,:);
+    XmemCell{i}(CurrSheepnbhd,:) = X(CurrSheepnbhd,:);
     
-    LastSeen(CurrSheepnbhd) = t;
+    LastSeenCell{i}(CurrSheepnbhd) = t*dt;
     currMeanVel = mean(U(CurrSheepnbhd,:),1);
 
     %TotalX(CurrSheepnbhd,:) = X(CurrSheepnbhd,:);
     SheepNbhd = unique(union(SheepNbhdPast,CurrSheepnbhd));
     
-    Xmem(forgotten,:) = 0;
+    XmemCell{i}(forgotten,:) = 0;
     if strcmp(scalarField,'fence')
-        indices = find(~((Xmem(SheepNbhd,1)<20).*(Xmem(SheepNbhd,2)<20)));
+        indices = find(~((XmemCell{i}(SheepNbhd,1)<20).*(XmemCell{i}(SheepNbhd,2)<20)));
         SheepNbhd(indices) = [];
         if (isempty(SheepNbhd))
             disp("all sheep are outside the fence")
@@ -161,17 +164,16 @@ for i = 1:Ndogs
         end
     end
     
-    SheepNbhd( find(~any(Xmem(SheepNbhd,:)')), : ) = [];
+    SheepNbhd( find(~any(XmemCell{i}(SheepNbhd,:)')), : ) = [];
 
     if (isempty(SheepNbhd))
-        disp("The dog sees no sheep")
-        stopSimul = true;
-        break
+        sheepIsSeen(i) = 0;
+        continue
     end
 
-    exponentialDecay = ExpAmplitude.*exp(decayRate.*(LastSeen(SheepNbhd)-t)./recallDelay) + ExpShift;
+    exponentialDecay = ExpAmplitude.*exp(decayRate.*(LastSeenCell{i}(SheepNbhd)-t*dt)./recallDelay) + ExpShift;
     sumExpDecay=(sum(exponentialDecay));
-    CM = sum(Xmem(SheepNbhd,:).*exponentialDecay,1)./sumExpDecay;
+    CM = sum(XmemCell{i}(SheepNbhd,:).*exponentialDecay,1)./sumExpDecay;
     equilibrium = findDogEquil(CM,L , tar,numel(SheepNbhd));
 
     % finds sheep agent with indexMax
@@ -183,7 +185,7 @@ for i = 1:Ndogs
         CMtoDog = CMtoDog ./CMtoDogNorm ;
     end
 
-    DogToSheep = xDog-Xmem(SheepNbhd,:);
+    DogToSheep = xDog-XmemCell{i}(SheepNbhd,:);
     DogToSheepNorm = vecnorm(DogToSheep,2,2);
     if (DogToSheepNorm~=0)
         DogToSheep = DogToSheep./DogToSheepNorm;
@@ -213,7 +215,7 @@ for i = 1:Ndogs
     % equilibrium ON protoco
 
 
-    XsheepMaxIndex = Xmem(SheepToCollect,:);
+    XsheepMaxIndex = XmemCell{i}(SheepToCollect,:);
 
     goalLocation = (XsheepMaxIndex - CM);
     goalLocationNorm = vecnorm(goalLocation,2,2);
@@ -232,11 +234,7 @@ for i = 1:Ndogs
     if (dogToGoalNorm~=0)
         dogToGoal = dogToGoal ./dogToGoalNorm;
     end
-    dogS = 0;
-
-    if nearest(i)<Ndogs+1
-        dogS = transition(vecnorm(xDog - X(nearest(i),:),2,2)/(L), 'expReciprocal');
-    end
+    
     %---------------
     CMtoDogTar = homeToTarget(tar,CM);
     CMtoDogTarNorm = vecnorm(CMtoDogTar,2,2);
@@ -264,19 +262,36 @@ for i = 1:Ndogs
         sDriving = transition(thetaDogEquil/pi,'expReciprocal');
     end
     nearestIndex = nearest(i);
-    dog_dogRepel = (xDog - X(nearestIndex,:));
+    dog_nearestRepel = (xDog - X(nearestIndex,:));
 
-    dog_dogRepelNorm = vecnorm(dog_dogRepel,2,2);
-    if (dog_dogRepelNorm~=0)
-        dog_dogRepel = dog_dogRepel./dog_dogRepelNorm;
+    dog_nearestRepelNorm = vecnorm(dog_nearestRepel,2,2);
+    if (dog_nearestRepelNorm~=0)
+        dog_nearestRepel = dog_nearestRepel./dog_nearestRepelNorm;
     end
-    DogDisplacementVec(i,:) =  (1-s) .* dogToGoal.*(1-sDriving)+ DogToEquil.*(sDriving);
-    DogDisplacementVec(i,:) = DogDisplacementVec(i,:) -(1*repelConvHullStrength*s).* h + (dogS).*dog_dogRepel;
+    % dogS = 0;
+    % 
+    % if nearest(i)<Ndogs+1
+    % 
+    % end
+    %turn off repel from CH
+    if nearest(i)<Ndogs+1
+        dogS = 0;
+    else
+        dogS = transition(dog_nearestRepelNorm/L, 'expReciprocal');
+    end
+    s= 0;
+    
+    %
+
+    DogDisplacementVec(i,:) =  (1-dogS) .* dogToGoal.*(1-sDriving)+ DogToEquil.*(sDriving);
+    DogDisplacementVec(i,:) = DogDisplacementVec(i,:) + (dogS).*dog_nearestRepel-(1*repelConvHullStrength*s).* h;
     goalLocationArr(i,:) = goalLocation;
 
     CMs(i,:) = CM;
     %Xtotals{i} = Xmem;
-    Xmem(SheepNbhd,:) = Xmem(SheepNbhd,:) + currMeanVel;
+    if advectRememberedAgents
+        XmemCell{i}(SheepNbhd,:) = XmemCell{i}(SheepNbhd,:) + currMeanVel;
+    end
 end
 
 if (strcmp(scalarField,'fence'))
@@ -284,13 +299,27 @@ if (strcmp(scalarField,'fence'))
 end
 
 
+if (max(sheepIsSeen) == 0)
+    disp("No Dog Sees Any Sheep -- Stopping Simulation")
+    stopSimul = true;
+end
+
+
+
 clear("chullTar")
-W = U(1:Ndogs,:)+(DogDisplacementVec);
+W = (DogDisplacementVec);%+U(1:Ndogs,:);
 g = ones(Ndogs,1);
-tooLarge = find(vecnorm(W,2,2)>1);
+tooLarge = find(vecnorm(W,2,2)>1.5307740677166393);
 g(tooLarge) = 1/vecnorm(W(tooLarge,:),2,2);
-U(1:Ndogs,:) = g.*W;
-disp(find(isnan(U)))
+W = g.*W;
+toReplace = find(sheepIsSeen==0);
+if (~isempty(toReplace))
+    meanDogsVel = mean(W(find(sheepIsSeen~=0),:),1);
+    W(toReplace,1) = meanDogsVel(1);
+    W(toReplace,2) = meanDogsVel(2);
+end
+U(1:Ndogs,:) = W;
+
 
 %------------ Uncomment this and line 251 for stalking ------%
 % indices = find(stalk);
@@ -303,4 +332,4 @@ disp(find(isnan(U)))
 % U(indices,:) = 0.02.*(stalkDir);
 %------------------------------------------------------------%
 
-output = {U, goalLocationArr,P,LastSeen,Xmem,exponentialDecay,stopSimul,SubflockCells};
+output = {U, goalLocationArr,P,LastSeenCell,XmemCell,exponentialDecay,stopSimul,SubflockCells};

@@ -77,7 +77,7 @@ end
 
 m = size(CH,1)-1;
 E = zeros(m,3);
-% disp(V)
+disp(C)
 for l = 1:m
     i = CH(l);
     c = V(C{i},:); 
@@ -89,7 +89,7 @@ for l = 1:m
     a2 = atan2(c(2,2)-X(i,2), c(2,1)-X(i,1));
     a3 = atan2(c(end,2)-X(i,2), c(end,1)-X(i,1));
     a4 = unbd_edge_arg(1+mod(l-2,m));
-    % disp([a,a1,a2,a3,a4])
+    disp([a,a1,a2,a3,a4])
     [~,S] = sort([a,a1,a2,a3,a4]);
     S = circshift(S, 1-find(S==1));
     % disp(S)

@@ -1,0 +1,19 @@
+dirname = "/Users/mikey/Summer 2025/MatlabGitVTP/MATLAB_code/ExperimentalPosCSVs/Run";
+Pressure = cell(16,1);
+tmaxArr = [271,302,485,2029,1625,1901,1164,305,397,1071,90,550,212,306,274,305];
+
+for runNum = 1:1
+    d = dirname+string(runNum)+"/";
+    P = zeros(tmaxArr(runNum)-1,1);
+    X_t-1 = 
+    for t=2:tmaxArr(runNum)
+        fname = "output_t"+string(t)+".csv";
+        T = readmatrix(d+fname,'HeaderLines', 1);
+        agentIDs = T(:,1);
+        N = numel(agentIDs);
+        X = [T(:,1) T(:,2)];
+        DT = delaunayTriangulation(X);
+        P(t-1) = voronoiPressure(DT);
+    end
+    Pressure{runNum,1} = P;
+end

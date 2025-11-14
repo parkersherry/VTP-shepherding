@@ -2,8 +2,8 @@
 clear all;
 close all force
 warning('off','all')
-dt = 1/10;
-N = 50;
+dt = 1/5;
+N = 35;
 alpha = Inf;%sqrt(N);
 Ndogs = 1;
 L = 3/4;
@@ -25,11 +25,11 @@ HomingDistance = 10*L;
 
 filename='data.mat';
 erase='';
-
+rng(10)
 % Display
-display=true;   % if true, will plot agents when code is run
-fixframe = true;
-frameinrad = 10;
+display=false;   % if true, will plot agents when code is run
+fixframe = false;
+frameinrad = 20;
 
 % no idea
 fdim = 1;
@@ -53,7 +53,7 @@ FourierCoeff = zeros([10 10 3]);
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1);%- sqrt(2*Ndogs)*L;
+X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1)- sqrt(2*N)*L;
 X(Ndogs+1:N,:) = ic_radSheep*(2*rand(Nsheep,2) - 1);%-sqrt(Nsheep)*L;
 % X(2:51,:) = X(2:51,:)+100;
 rainbowPalette = hsv; % better for colourblind to use cool
@@ -113,6 +113,9 @@ DT_t = cell(tmax,1);
 X_T = zeros(N,2,tmax);
 Polarization_t = zeros(tmax,1);
 Infections_t = cell(N-Ndogs,tmax);
+ldod1 = zeros(tmax,1);
+
+
 spreadDivider = 1;
 expDecay = zeros(N,2);
 %enforce sheep speed limit
@@ -143,9 +146,10 @@ for t = 1:tmax
     DT = delaunayTriangulation(X);
     [ConvexHull,hullArea] = convexHull(DT);
     [nbhd, nearest, d] = neighborhoods(DT);
-
     %---------------------------------%
     %keeping track of info at each time step
+    ldod1(t) = LDOD(X(Ndogs+1:end,:),10*L);
+
     DT_t{t} = DT;
     U_t(:,:,t) = U;
     X_T(:,:,t) = X;
@@ -188,7 +192,7 @@ for t = 1:tmax
     %---------------------------------%
     %get the repulsion vector and value of sigma curve for each agent
 
-    C = sheepMovementScheme(X, U1,DT, L, Ndogs,'indicator','dogExpReciprocal',nbhd,tar,HomingDistance);
+    C = sheepMovementScheme(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd,tar,HomingDistance);
     r = C{1};
     h = C{2};
 
@@ -246,6 +250,12 @@ for t = 1:tmax
 
 
 end
+load('data.mat')
+figLDOD = figure(1);
+scatter(linspace(1,tmax,tmax),ldod1,'red','filled')
+hold on
+scatter(linspace(1,tmax,tmax),ldod,'blue','filled')
+
 % 
 % S = unifMixMetric(N,Ndogs,delaunayTriangulation(X(Ndogs+1:end,:)),X_0);
 %disp(S)
@@ -311,4 +321,4 @@ end
 % plot(times(4000:5000),Polarization_t(4000:5000))
 % title("Polarization vs Time")
 
-% save("data.mat",'DT_t','U_t');
+save("data.mat",'ldod');

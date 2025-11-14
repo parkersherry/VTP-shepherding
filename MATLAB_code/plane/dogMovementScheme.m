@@ -62,11 +62,11 @@ shp = alphaShape(Xsheep);
 alpha = criticalAlpha(shp,'one-region');
 shp.Alpha = alpha;
 [~,P] = boundaryFacets(shp);
-
+areaOfAlpha = area(shp);
 if (~isempty(P))
     P(end+1,:) = P(1,:);
 end
-indicesConvHull = convhull(Xsheep);
+[indicesConvHull,areaConvHull] = convhull(Xsheep);
 ConvHullTarget = Target(Xsheep(indicesConvHull,:));
 CMs = zeros(Ndogs,2);
 
@@ -279,12 +279,11 @@ for i = 1:Ndogs
     else
         dogS = transition(dog_nearestRepelNorm/L, 'expReciprocal');
     end
-    s= 0;
     
     %
 
     DogDisplacementVec(i,:) =  (1-dogS) .* dogToGoal.*(1-sDriving)+ DogToEquil.*(sDriving);
-    DogDisplacementVec(i,:) = DogDisplacementVec(i,:) + (dogS).*dog_nearestRepel-(1*repelConvHullStrength*s).* h;
+    DogDisplacementVec(i,:) = DogDisplacementVec(i,:) + (dogS).*dog_nearestRepel-(0*s*repelConvHullStrength).* h;
     goalLocationArr(i,:) = goalLocation;
 
     CMs(i,:) = CM;
@@ -332,4 +331,4 @@ U(1:Ndogs,:) = W;
 % U(indices,:) = 0.02.*(stalkDir);
 %------------------------------------------------------------%
 
-output = {U, goalLocationArr,P,LastSeenCell,XmemCell,exponentialDecay,stopSimul,SubflockCells};
+output = {U, goalLocationArr,P,LastSeenCell,XmemCell,exponentialDecay,stopSimul,SubflockCells,areaOfAlpha/areaConvHull};

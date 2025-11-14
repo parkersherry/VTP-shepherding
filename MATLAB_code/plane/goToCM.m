@@ -28,7 +28,7 @@ end
 Gnormed = vecnorm(G,2,2);
 f = @(x) transition(x,trans_func);
 s = arrayfun(f,Gnormed./LArr);
-
-G = s.*G;
+% disp(Gnormed)
+G = s.*G./Gnormed;
 
 end

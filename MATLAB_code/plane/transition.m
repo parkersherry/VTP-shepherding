@@ -33,6 +33,6 @@ else
         case 'attractionSubAlign'
              y = 1- abs(2*(exp(-1/(1-x)) / (exp(-1/x)+exp(-1/(1-x))))-1);
         case 'dogExpReciprocal'
-            y = 3*exp(-1/(1-x)) / (exp(-1/x)+exp(-1/(1-x)));
+            y = exp(-1/(1-x)) / (exp(-1/x)+exp(-1/(1-x)));
     end
 end

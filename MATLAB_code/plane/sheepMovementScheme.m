@@ -5,7 +5,7 @@ fun = @(x) transition(x,transition_func);
 funDog = @(x) transition(x,dog_trans_func);
 
 %VERY NOT CONFIDENT IN THIS
-dogL = L;
+dogL = 5*L;
 
 LArrRepulsion = L.*ones(numel(d),1);
 
@@ -60,11 +60,9 @@ for j = Ndogs+1:N
         end
     end
 end
-
 s = arrayfun(fun, d./LArrRepulsion);
 r = s .* r;  % rescale to length s
 toCM = ToCMStrength.*goToCM(X,Firstnbhd,N,Ndogs,'linear2',LArrAttractionToCM,L);
-
 % ignore flock repulsion if dog is nearest neigbhour
 r(:,1) = r(:,1) .* nearestIsDog;
 r(:,2) = r(:,2) .* nearestIsDog;

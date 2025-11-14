@@ -15,22 +15,15 @@ end
 
 %% Parameters
 warning('off','all')
-dt = 1/10;
+dt = 1/5;
 L = 3/4;
 nu = ones(N,1)*nuIn;
-pressures = zeros(tmax,1);
-CMDrift = zeros(tmax,1);
+
+
+
 
 vMaxSheep = 0.4800017685470678;
 HomingDistance = 10*L;
-%---------------------------
-% syms x y
-% scalarField(x,y) = 0;%5*exp((-x^2-y^2)/400);
-% %scalarField(x,y) = x+y^2;
-% v = [x,y];
-% vectorField = gradient(scalarField,v);
-% vecFunc = @(x,y) vectorField(x,y);
-%---------------------------
 
 
 fdim = 1;
@@ -54,7 +47,7 @@ rng(position_seed);
 % assign to X the value of ic_rad
 X=zeros(N,2);
 % multiplied by a random number drawn from the interval [-1,1]
-X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1);%- sqrt(2*Ndogs)*L;
+X(1:Ndogs,:) = ic_radDog*(2*rand(Ndogs,2) - 1)- sqrt(2*Nsheep)*L;
 X(Ndogs+1:N,:) = ic_radSheep*(2*rand(Nsheep,2) - 1);%-sqrt(Nsheep)*L;
 
 
@@ -70,7 +63,7 @@ U(1:Ndogs,:) = 0;
 
 tar = Target();
 
-%dogTar = Target();
+dogTar = Target();
 
 %% Preallocation of some intermediate variables
 
@@ -87,7 +80,14 @@ FourierCoeff = zeros([10 10 3]);
 U_t = zeros(N,2,tmax);
 DT_t = cell(tmax,1);
 X_T = zeros(N,2,tmax);
+
+ldod = zeros(tmax,1);
 Polarization_t = zeros(tmax,1);
+convexity_t = zeros(tmax,1);
+pressures = zeros(tmax,1);
+CMDrift = zeros(tmax,1);
+
+
 %enforce sheep speed limit
 g = ones(N,1);
 sizeOfVel = vecnorm(U,2,2);
@@ -103,6 +103,7 @@ LastSeen = cell(Ndogs,1);
 [LastSeen{1:Ndogs}] = deal(zeros(N,1));
 scalarF = "zero";
 DistMatrixCell = cell(1,tmax);
+
 %% Time for loop
 for t = 1:tmax
 
@@ -117,10 +118,13 @@ for t = 1:tmax
     DT_t{t} = DT;
     U_t(:,:,t) = U;
     X_T(:,:,t) = X;
+
     Polarization_t(t) = polarization(U,Ndogs);
     CMDrift(t) = vecnorm(mean(X(Ndogs+1:N,:)-[20 20]),2,2);
     pressures(t) = voronoiPressure(DT);
-    DistMatrixCell{t} = distanceMixMetric(N,Ndogs,X,X);
+    convexity_t(t) = 1;
+    ldod(t) = LDOD(X(Ndogs+1:end,:),100*L);
+    % DistMatrixCell{t} = distanceMixMetric(N,Ndogs,X,X);
     %---------------------------------%
 
     % get alignment vector scaled by current velocity
@@ -134,7 +138,8 @@ for t = 1:tmax
 
         DMS = dogMovementScheme(X_T,U, DT, Ndogs, L, dogTar,t,dt,LastSeen,Xmem,scalarF,prefVel(1:Ndogs,:),alpha,memDuration);
         U1 = DMS{1};
-
+        
+        convexity_t(t) = DMS{9};
         LastSeen = DMS{4};
         Xmem = DMS{5};
 
@@ -145,7 +150,7 @@ for t = 1:tmax
     %---------------------------------%
     %get the repulsion vector and value of sigma curve for each agent
 
-    C = sheepMovementScheme(X, U1,DT, L, Ndogs,'indicator','dogExpReciprocal',nbhd,tar,HomingDistance);
+    C = sheepMovementScheme(X, U1,DT, L, Ndogs,'expReciprocal','dogExpReciprocal',nbhd,tar,HomingDistance);
     r = C{1};
     h = C{2};
 
@@ -202,5 +207,5 @@ end
 % modfun = @(a,t) a(1).*tanh(a(2).*t./log(2));
 % mdl = fitnlm(times,muMixing,modfun,[6 3]);
 % a = mdl.Coefficients.Estimate;
-save(filename,'tmax','position_seed','angle_seed','Polarization_t','pressures');
+save(filename,'tmax','position_seed','angle_seed','Polarization_t','pressures','convexity_t','ldod','X_T');
 %save(filename,'position_seed','angle_seed','N','aEstimated');
